@@ -1,0 +1,482 @@
+/* Premier · Core — экран чата (редизайн, шаг 3).
+   Сцена, боковая панель, верхняя строка, лента сообщений, поле ввода, лимит, пустой чат, телефон.
+   Подключается после core-components.css и core-scene.css. Опирается на существующие id и классы разметки чата:
+   скрипты public/js на них завязаны, поэтому здесь меняется только вид. Все значения — из токенов --core-*.
+   Старое оформление ещё не переделанных частей (окно результата, код, окна, меню) лежит в /css/chat-legacy.css. */
+
+.core{
+  --chat-col:46rem;                 /* ширина колонки чтения вместе с полями */
+  --chat-pad:var(--core-s-6);       /* поля колонки */
+  --chat-side:264px;                /* ширина боковой панели */
+  --chat-top:52px;                  /* высота верхней строки */
+  --chat-gap:var(--core-s-2);       /* зазор между панелью и краем окна */
+  --chat-plate:color-mix(in srgb,var(--core-edge) 6%,var(--core-scene));  /* пластина на чистой сцене (без размытия) */
+  --chat-breathe:calc(var(--core-ambient) * .375);  /* дыхание частицы Ядра — тот же ритм, что у метки «ИИ работает» */
+}
+
+/* ---------- каркас страницы ---------- */
+html.core,html.core body{height:100%}
+@supports (height:100dvh){html.core,html.core body{height:100dvh}}
+html.core body{display:flex;overflow:hidden}
+.core [hidden]{display:none!important}
+
+/* ---------- кнопка-значок: тихая, одна на весь экран чата ---------- */
+.core .ib{
+  position:relative;display:inline-grid;place-items:center;flex:none;width:var(--core-h-md);height:var(--core-h-md);margin:0;padding:0;
+  border:0;border-radius:var(--core-r-sm);background:transparent;color:var(--core-text-2);cursor:var(--core-cursor-action);
+  transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear,opacity var(--core-dur-2) linear,transform var(--core-dur-1) var(--core-ease-out);
+}
+.core .ib svg{width:18px;height:18px}
+@media (hover:hover){.core .ib:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core .ib:active{background:var(--core-fill-2);color:var(--core-text);transform:scale(.96)}
+.core .ib.on{background:var(--core-fill-2);color:var(--core-text)}
+
+/* ---------- боковая панель: дальнее стекло ---------- */
+.core .side{
+  position:relative;display:flex;flex-direction:column;flex:none;width:var(--chat-side);margin:var(--chat-gap) 0 var(--chat-gap) var(--chat-gap);
+  padding:var(--core-s-15);overflow:hidden;border-radius:var(--core-r-md);
+  transition:width var(--core-dur-3) var(--core-ease-move),margin var(--core-dur-3) var(--core-ease-move),padding var(--core-dur-3) var(--core-ease-move),opacity var(--core-dur-2) linear,visibility 0s;
+}
+.core .side>*{min-width:calc(var(--chat-side) - var(--core-s-15) * 2);flex:none}
+.core .side.closed{width:0;margin-left:0;padding-left:0;padding-right:0;opacity:0;visibility:hidden;transition:width var(--core-dur-3) var(--core-ease-move),margin var(--core-dur-3) var(--core-ease-move),padding var(--core-dur-3) var(--core-ease-move),opacity var(--core-dur-2) linear,visibility 0s var(--core-dur-3)}
+/* На компьютере Ядро никогда не проходит за панелью: за ней ровная сцена, и размытие ничего бы не изменило,
+   но пересчитывалось бы на каждый кадр сцены. Материал остаётся (заливка, кромка, тень), размытие — только у шторки на телефоне. */
+@media (min-width:861px){.core .side{-webkit-backdrop-filter:none;backdrop-filter:none}}
+
+.core .shead{display:flex;align-items:center;justify-content:space-between;height:var(--core-h-lg);padding:0 var(--core-s-05) 0 var(--core-s-2)}
+.core .brand{display:inline-flex;align-items:center;gap:var(--core-s-2);padding:var(--core-s-1) var(--core-s-2) var(--core-s-1) var(--core-s-05);border-radius:var(--core-r-sm);color:var(--core-text);font:var(--core-human-3);font-weight:var(--core-w-3);letter-spacing:var(--core-track-4);text-decoration:none;cursor:var(--core-cursor-action)}
+.core .brand-spark{width:18px;height:18px;flex:none;background:currentColor;-webkit-mask:var(--core-glyph-spark) center/contain no-repeat;mask:var(--core-glyph-spark) center/contain no-repeat}
+
+.core .new{display:flex;align-items:center;gap:var(--core-s-3);width:100%;min-height:var(--core-h-md);margin:var(--core-s-1) 0 0;padding:0 var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:transparent;color:var(--core-text);font:var(--core-human-2);font-weight:var(--core-w-2);text-align:left;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear}
+.core .new svg{width:var(--core-icon);height:var(--core-icon);color:var(--core-text-2)}
+@media (hover:hover){.core .new:hover{background:var(--core-fill-1)}}
+.core .new:active{background:var(--core-fill-2)}
+
+.core .search{display:flex;align-items:center;gap:var(--core-s-3);min-height:var(--core-h-md);margin:var(--core-s-05) 0 0;padding:0 var(--core-s-3);border-radius:var(--core-r-sm);color:var(--core-text-3);cursor:var(--core-cursor-text);transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+.core .search svg{width:var(--core-icon);height:var(--core-icon)}
+.core .search input{flex:1;min-width:0;height:var(--core-h-md);margin:0;padding:0;border:0;outline:0;background:transparent;color:var(--core-text);font:var(--core-human-2)}
+@media (hover:hover){.core .search:hover{background:var(--core-fill-1)}}
+.core .search:focus-within{background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-focus);color:var(--core-text-2)}
+
+.core .scroll{flex:1 1 0;min-height:0;margin:var(--core-s-2) calc(var(--core-s-15) * -1) 0;padding:0 var(--core-s-15) var(--core-s-2);overflow-y:auto;overscroll-behavior:contain}
+.core .sec{display:flex;align-items:center;justify-content:space-between;min-height:var(--core-h-sm);margin:var(--core-s-3) 0 var(--core-s-05);padding:0 var(--core-s-05) 0 var(--core-s-3);color:var(--core-text-3);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.core .sec .ib{width:var(--core-h-sm);height:var(--core-h-sm);color:var(--core-text-3)}
+.core .sec .ib svg{width:var(--core-icon);height:var(--core-icon)}
+
+.core .item{position:relative;display:flex;align-items:center;gap:var(--core-s-3);width:100%;min-height:var(--core-h-md);margin:0;padding:0 var(--core-s-1) 0 var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:transparent;color:var(--core-text-2);font:var(--core-human-2);text-align:left;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .item>span:not(.x):not(.gear){flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .item>svg{width:var(--core-icon);height:var(--core-icon);color:var(--core-text-3)}
+@media (hover:hover){.core .item:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core .item.on{background:var(--core-fill-2);color:var(--core-text)}
+.core .item .x,.core .item .gear{display:grid!important;place-items:center;flex:none;width:var(--core-h-sm);height:var(--core-h-sm);border-radius:calc(var(--core-r-sm) - 2px);color:var(--core-text-3);opacity:0;transition:opacity var(--core-dur-1) linear,background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .item .x svg,.core .item .gear svg{width:14px;height:14px}
+.core .item:hover .x,.core .item:hover .gear,.core .item.on .x,.core .item.on .gear,.core .item:focus-visible .x,.core .item:focus-visible .gear{opacity:1}
+@media (hover:hover){.core .item .x:hover,.core .item .gear:hover{background:var(--core-fill-2);color:var(--core-text)}}
+@media (hover:none){.core .item .gear{opacity:1}}
+/* выбранный чат: под строками ездит одна подсветка (#hl), сама строка фон не красит */
+.core .clist{position:relative}
+.core .hl{position:absolute;left:0;right:0;top:0;height:0;border-radius:var(--core-r-sm);background:var(--core-fill-2);opacity:0;pointer-events:none;transition:transform var(--core-dur-3) var(--core-ease-move),height var(--core-dur-3) var(--core-ease-move),opacity var(--core-dur-2) linear}
+.core .hl.noanim{transition:none}
+.core #chats .item{z-index:1}
+.core #chats .item.on,.core #chats .item.on:hover{background:transparent}
+/* в этом чате ИИ сейчас работает — частица Ядра */
+.core .busydot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--core-point)}
+.core .empty-s{padding:var(--core-s-2) var(--core-s-3);color:var(--core-text-3);font:var(--core-human-1)}
+
+/* тариф и Telegram: остаются на месте, но говорят вполголоса — без карточек и без янтаря */
+.core .plancard{margin:var(--core-s-2) 0 0;padding:var(--core-s-3) var(--core-s-3) var(--core-s-2);border-top:1px solid var(--core-line)}
+.core .pc-top{display:flex;align-items:center;justify-content:space-between;gap:var(--core-s-2);min-height:var(--core-h-sm)}
+.core .pc-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none;letter-spacing:.04em;text-transform:uppercase}
+.core .pc-bts{display:inline-flex;gap:var(--core-s-05);flex:none;margin-right:calc(var(--core-s-2) * -1)}
+.core .pc-up,.core .pc-rst{min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-2);border:0;border-radius:var(--core-r-sm);background:transparent;color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core .pc-up:hover,.core .pc-rst:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core .pc-bar{height:2px;margin:var(--core-s-15) 0 var(--core-s-2);border-radius:var(--core-r-full);background:var(--core-line);overflow:hidden}
+.core .pc-bar i{display:block;height:100%;border-radius:inherit;background:var(--core-text-3);transition:width var(--core-dur-4) var(--core-ease-move)}
+.core .pc-bar.low i{background:var(--core-warn)}
+.core .pc-bar.out i{background:var(--core-bad)}
+.core .plancard small{display:block;color:var(--core-text-3);font:var(--core-human-1);font-variant-numeric:tabular-nums}
+
+.core .tgcard{display:flex;align-items:center;margin:0;padding:var(--core-s-1) var(--core-s-05) var(--core-s-1) var(--core-s-3);border-top:1px solid var(--core-line)}
+.core .tgin{display:flex;align-items:center;gap:var(--core-s-3);flex:1;min-width:0;min-height:var(--core-h-md);color:var(--core-text-2);text-decoration:none;cursor:var(--core-cursor-action)}
+.core .tgic{display:grid;place-items:center;flex:none;color:var(--core-text-3)}
+.core .tgic svg{width:var(--core-icon);height:var(--core-icon)}
+.core .tgin b{display:block;font:var(--core-human-1);font-weight:var(--core-w-2);color:var(--core-text-2)}
+.core .tgin small{display:block;font:var(--core-human-1);color:var(--core-text-3)}
+@media (hover:hover){.core .tgin:hover b{color:var(--core-text)}}
+.core .tgsub{display:none}
+.core .tgx{display:grid;place-items:center;flex:none;width:var(--core-h-sm);height:var(--core-h-sm);margin:0;padding:0;border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-3);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .tgx svg{width:14px;height:14px}
+@media (hover:hover){.core .tgx:hover{background:var(--core-fill-1);color:var(--core-text)}}
+
+.core .me{display:flex;align-items:center;gap:var(--core-s-05);margin:0;padding:var(--core-s-15) 0 0;border-top:1px solid var(--core-line)}
+.core .mebtn{display:flex;align-items:center;gap:var(--core-s-2);flex:1;min-width:0;min-height:var(--core-h-lg);margin:0;padding:0 var(--core-s-2) 0 var(--core-s-15);border:0;border-radius:var(--core-r-sm);background:transparent;color:var(--core-text);font:var(--core-human-2);text-align:left;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .mebtn:hover{background:var(--core-fill-1)}}
+.core #meName{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .av{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text);font:var(--core-human-1);font-weight:var(--core-w-3)}
+/* язык — рядом с аккаунтом, машинным голосом */
+.core .language-switch{display:inline-flex;align-items:center;flex:none;gap:0;padding:0;border:0;background:none;font:var(--core-machine-1);font-variant-ligatures:none}
+.core .language-switch a{display:grid;place-items:center;min-width:var(--core-h-sm);min-height:var(--core-h-sm);padding:0 var(--core-s-1);border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-3);font:inherit;letter-spacing:.04em;text-decoration:none;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core .language-switch a:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core .language-switch a[aria-current=true]{background:transparent;color:var(--core-text)}
+
+.core .overlay{display:none}
+
+/* ---------- главная область ---------- */
+.core .main{position:relative;isolation:isolate;display:flex;flex-direction:column;flex:1;min-width:0}
+.core .sp{flex:1}
+
+.core .top{position:relative;z-index:2;display:flex;align-items:center;gap:var(--core-s-2);flex:none;height:var(--chat-top);padding:0 var(--core-s-3) 0 var(--core-s-4);background-color:var(--core-scene);transition:background-color var(--core-scene-move) linear}
+.core .side.closed~.main .top,.core .top:has(#openSide:not([hidden])){padding-left:var(--core-s-2)}
+.core .crumb{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--core-text-3);font:var(--core-human-2)}
+.core .crumb b{color:var(--core-text-2);font-weight:var(--core-w-2)}
+.core .gw-share{display:inline-flex;align-items:center;gap:var(--core-s-2);flex:none;min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:transparent;box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+.core .gw-share svg{width:14px;height:14px}
+@media (hover:hover){.core .gw-share:hover{background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-text-3);color:var(--core-text)}}
+.core .gw-share:active{background:var(--core-fill-2)}
+
+/* Лента. Ответ лежит прямо на сцене, поэтому в разговоре область чтения закрыта ровным цветом сцены: Ядро уходит
+   к горизонту и остаётся видно только за полем ввода и под ним. Точки не проходят за текстом ни в одном состоянии. */
+.core .chat{position:relative;flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable both-edges;background-color:var(--core-scene);transition:background-color var(--core-scene-move) linear}
+.core .col{max-width:var(--chat-col);margin:0 auto;padding:var(--core-s-4) var(--chat-pad) var(--core-s-10);transition:opacity var(--core-dur-2) linear}
+.core .col.fade{opacity:0}
+/* текст уходит под верхнюю строку и под поле ввода без резкой границы */
+.core .top::after,.core .dock::before{content:"";position:absolute;left:0;right:var(--core-s-3);height:var(--core-s-5);pointer-events:none}
+.core .top::after{top:100%;background:linear-gradient(var(--core-scene),transparent)}
+.core .dock::before{bottom:100%;background:linear-gradient(transparent,var(--core-scene))}
+.core .main.empty .top::after,.core .main.empty .dock::before{content:none}
+
+/* ---------- сообщения ---------- */
+.core .msg{margin:0 0 var(--core-s-6)}
+@media (prefers-reduced-motion:no-preference){
+  .core:not([data-core-motion=reduce]) .msg.in{animation:chat-in var(--core-dur-3) var(--core-ease-out) both}
+}
+@keyframes chat-in{from{opacity:0;transform:translateY(6px)}}
+
+/* вопрос — пластина */
+.core .u{display:flex;justify-content:flex-end;margin:0 0 var(--core-s-1)}
+.core .bub{position:relative;max-width:min(82%,34rem);margin:0;padding:var(--core-s-2) var(--core-s-4);border-radius:var(--core-r-md);background:var(--chat-plate);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text);font:var(--core-human-3);white-space:pre-wrap;overflow-wrap:anywhere;cursor:var(--core-cursor-text)}
+/* кромка пластины: свет идёт снизу, от горизонта */
+.core .bub::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;background:linear-gradient(to top,color-mix(in srgb,var(--core-edge) 26%,transparent),color-mix(in srgb,var(--core-edge) 7%,transparent) 70%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.core .upick{display:inline-flex;align-items:center;gap:var(--core-s-15);max-width:100%;min-height:var(--core-h-sm);padding:0 var(--core-s-2);border-radius:var(--core-r-sm);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none}
+.core .upick svg{width:14px;height:14px;color:var(--core-text-3)}
+.core .uatt{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--core-s-2);margin:0 0 var(--core-s-2)}
+.core .uatt img{display:block;width:auto;max-width:min(100%,280px);max-height:220px;border-radius:var(--core-r-md);box-shadow:0 0 0 1px var(--core-line);cursor:var(--core-cursor-action)}
+
+/* вложение: в поле ввода и в отправленном сообщении */
+.core .att{position:relative;display:flex;align-items:center;gap:var(--core-s-2);height:44px;max-width:240px;padding:0 var(--core-s-3) 0 var(--core-s-15);border-radius:var(--core-r-sm);background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text);font:var(--core-human-1)}
+.core .att .ai{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);color:var(--core-text-2)}
+.core .att .ai svg{width:var(--core-icon);height:var(--core-icon)}
+.core .att .nm{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:var(--core-machine-1);font-variant-ligatures:none}
+.core .att small{display:block;color:var(--core-text-3);font:var(--core-machine-1);font-variant-ligatures:none;font-variant-numeric:tabular-nums}
+.core .att.img{width:44px;padding:0;overflow:hidden}
+.core .att.img img{display:block;width:100%;height:100%;object-fit:cover}
+.core .atts .att{padding-right:var(--core-s-8)}
+.core .atts .att.img{padding:0}
+.core .att .rm{position:absolute;top:50%;right:var(--core-s-1);display:grid;place-items:center;width:24px;height:24px;margin:-12px 0 0;padding:0;border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-3);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .att.img .rm{top:2px;right:2px;width:20px;height:20px;margin:0;background:var(--core-glass-near);color:var(--core-text)}
+@media (hover:hover){.core .att .rm:hover{background:var(--core-fill-3);color:var(--core-text)}}
+.core .att.loading{color:var(--core-text-3)}
+@media (prefers-reduced-motion:no-preference){.core:not([data-core-motion=reduce]) .att.loading{animation:core-breathe var(--core-ambient) ease-in-out infinite alternate}}
+
+/* ответ — просто текст */
+.core .who{display:flex;align-items:center;gap:var(--core-s-15);margin:0 0 var(--core-s-15);color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.core .who i{color:var(--core-text-3);font:var(--core-machine-1);font-style:normal;font-variant-ligatures:none}
+/* знак у подписи появляется только пока модель думает — и это частица Ядра, а не логотип */
+.core .who .mark{display:none}
+.core .who .mark.breathe{display:block;flex:none;width:6px;height:6px;margin-right:var(--core-s-05);border-radius:50%;background:var(--core-point);box-shadow:0 0 8px var(--core-point)}
+.core .who .mark img{display:none!important}
+@media (prefers-reduced-motion:no-preference){
+  .core:not([data-core-motion=reduce]) :is(.who .mark.breathe,.busydot,.cursor){animation:core-breathe var(--chat-breathe) ease-in-out infinite alternate}
+}
+
+.core .md{color:var(--core-text);font:var(--core-human-3);overflow-wrap:break-word}
+.core .md>:first-child{margin-top:0}
+.core .md>:last-child{margin-bottom:0}
+.core .md p{margin:0 0 var(--core-s-4)}
+.core .md h3{margin:var(--core-s-6) 0 var(--core-s-2);color:var(--core-text);font:var(--core-human-3);font-weight:var(--core-w-3)}
+.core .md ul,.core .md ol{margin:0 0 var(--core-s-4);padding:0 0 0 var(--core-s-6)}
+.core .md li{margin:var(--core-s-15) 0;padding-left:var(--core-s-1)}
+.core .md li::marker{color:var(--core-text-3);font-variant-numeric:tabular-nums}
+.core .md li>ul,.core .md li>ol{margin:var(--core-s-15) 0 0}
+.core .md strong{font-weight:var(--core-w-3)}
+.core .md em{font-style:italic}
+.core .md del{color:var(--core-text-3);text-decoration-thickness:1px}
+.core .md a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;text-decoration-color:var(--core-text-3);border-radius:2px;cursor:var(--core-cursor-action);transition:text-decoration-color var(--core-dur-1) linear}
+@media (hover:hover){.core .md a:hover{text-decoration-color:currentColor}}
+.core .md :not(pre)>code{padding:1px var(--core-s-1);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);border:0;color:var(--core-text);font:var(--core-machine-2);font-variant-ligatures:none;overflow-wrap:anywhere}
+.core .md blockquote{margin:0 0 var(--core-s-4);padding:var(--core-s-05) 0 var(--core-s-05) var(--core-s-4);border:0;border-left:1px solid var(--core-line-2);background:none;color:var(--core-text-2)}
+.core .md blockquote>:last-child{margin-bottom:0}
+.core .md hr{height:1px;margin:var(--core-s-6) 0;border:0;background:var(--core-line)}
+.core .md img{max-width:100%;border-radius:var(--core-r-sm)}
+/* таблица: машинные значения читаются колонками, шапка — тихая подпись */
+.core .tbl{margin:0 0 var(--core-s-4);overflow-x:auto;border:0;border-radius:var(--core-r-sm);box-shadow:inset 0 0 0 1px var(--core-line);-webkit-overflow-scrolling:touch}
+.core .tbl table{width:100%;border-collapse:collapse;font:var(--core-human-2)}
+.core .tbl th,.core .tbl td{padding:var(--core-s-2) var(--core-s-3);border:0;border-bottom:1px solid var(--core-line);text-align:left;vertical-align:top}
+.core .tbl th{background:var(--core-fill-1);color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);white-space:nowrap}
+.core .tbl td{min-width:80px;color:var(--core-text)}
+.core .tbl tr:last-child td{border-bottom:0}
+/* формулы */
+.core .md .katex{font-size:1.06em;color:var(--core-text)}
+.core .cv-mathb{margin:0 0 var(--core-s-4);padding:var(--core-s-1) 0;overflow-x:auto;overflow-y:hidden;text-align:center}
+.core .cv-mathb .katex-display{margin:0}
+.core .cv-math-src{color:var(--core-text-2);font:var(--core-machine-2);font-variant-ligatures:none}
+.core .cv-math-src.block{display:block;margin:0 0 var(--core-s-4);white-space:pre-wrap}
+/* место, где сейчас появляется текст, — частица Ядра */
+.core .cursor{display:inline-block;width:7px;height:7px;margin-left:var(--core-s-1);border-radius:50%;background:var(--core-point);vertical-align:.08em}
+
+/* источники */
+.core .srcs{display:flex;flex-wrap:wrap;gap:var(--core-s-15);margin:var(--core-s-3) 0 0}
+.core .src{display:inline-flex;align-items:center;gap:var(--core-s-15);max-width:220px;min-height:24px;padding:0 var(--core-s-2);border-radius:var(--core-r-full);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none;text-decoration:none;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .src b{color:var(--core-text-3);font-weight:inherit}
+.core .src span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@media (hover:hover){.core .src:hover{background:var(--core-fill-1);color:var(--core-text)}}
+
+/* действия под сообщением: место занято всегда, появляется только видимость */
+.core .acts{display:flex;align-items:center;gap:var(--core-s-05);min-height:var(--core-h-sm);margin:var(--core-s-2) 0 0 calc(var(--core-s-15) * -1);opacity:0;transition:opacity var(--core-dur-2) linear}
+.core .acts.u{justify-content:flex-end;margin:var(--core-s-1) calc(var(--core-s-15) * -1) 0 0}
+.core .msg:hover .acts,.core .msg:last-child .acts,.core .acts:focus-within{opacity:1}
+.core .acts .ib{width:var(--core-h-sm);height:var(--core-h-sm);color:var(--core-text-3)}
+.core .acts .ib svg{width:15px;height:15px}
+@media (prefers-reduced-motion:no-preference){.core:not([data-core-motion=reduce]) .acts .ib.load svg{animation:core-breathe var(--chat-breathe) ease-in-out infinite alternate}}
+.core .cv-meta{margin:0 var(--core-s-2);color:var(--core-text-3);font:var(--core-machine-1);font-variant-ligatures:none;font-variant-numeric:tabular-nums;white-space:nowrap;cursor:var(--core-cursor)}
+.core .pop{animation:none}
+
+/* ошибка: красная кромка и её кнопки */
+.core .errbox{margin:0;padding:var(--core-s-3) var(--core-s-4);border:0;border-radius:var(--core-r-sm);background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 42%,transparent);color:var(--core-text);font:var(--core-human-2)}
+.core .cu-acts{display:flex;flex-wrap:wrap;gap:var(--core-s-2);margin:var(--core-s-3) 0 0}
+.core .cu-acts button{min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:transparent;box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+.core .cu-acts button:first-child{background:var(--core-fill-2);color:var(--core-text)}
+@media (hover:hover){.core .cu-acts button:hover{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-3);color:var(--core-text)}}
+
+/* ---------- поле ввода ---------- */
+.core .dock{position:relative;z-index:1;flex:none;padding:0 calc(var(--chat-pad) - var(--core-s-4)) var(--core-s-6)}
+/* над полем цвет сцены плотный (там подписи), а за самим полем сходит на нет — отсюда и начинается свет Ядра */
+.core .dock::after{content:"";position:absolute;z-index:-1;left:0;right:0;top:0;height:calc(var(--dock-meta,0px) + var(--core-s-12));pointer-events:none;background:linear-gradient(var(--core-scene) var(--dock-meta,0px),transparent)}
+.core .main.empty .dock::after{content:none}
+.core .dock-meta{display:flex;align-items:center;justify-content:space-between;gap:var(--core-s-1) var(--core-s-4);max-width:var(--chat-col);min-height:var(--core-s-6);margin:0 auto;padding:0 var(--core-s-4) var(--core-s-15)}
+.core .note{flex:none;margin:0 0 0 auto;color:var(--core-text-3);font:var(--core-human-1);text-align:right;white-space:nowrap}
+
+.core .box{position:relative;z-index:0;max-width:var(--chat-col);margin:0 auto;padding:var(--core-s-2);border-radius:var(--core-r-lg)}
+/* Стекло поля — отдельный слой под содержимым, а не сама форма: у формы нет backdrop-filter, и вложенные в неё
+   окна с position:fixed (шторка выбора модели на телефоне) по-прежнему считаются от окна браузера. */
+.core .box-glass{position:absolute;inset:0;z-index:-1;border-radius:inherit;--core-at-x:var(--core-x);--core-at-y:88;transition:box-shadow var(--core-dur-3) linear}
+.core .main.empty .box-glass{--core-at-y:var(--core-y)}
+/* кромка разогревается, пока Ядро слушает (пользователь печатает) или думает */
+.core .box-glass::before{content:"";position:absolute;inset:0;z-index:1;border-radius:inherit;padding:1px;pointer-events:none;opacity:0;background:linear-gradient(to top,color-mix(in srgb,var(--core-heat-4) 80%,transparent),color-mix(in srgb,var(--core-heat-3) 22%,transparent) 55%,transparent);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);transition:opacity var(--core-dur-4) linear}
+.core[data-core-is=listening] .box-glass::before{opacity:.75}
+.core[data-core-is=thinking] .box-glass::before,.core[data-core-is=answering] .box-glass::before{opacity:1}
+.core .box:focus-within .box-glass{--_edge:.62}
+
+.core #q{display:block;width:100%;height:26px;max-height:200px;margin:0;padding:0 var(--core-s-2) 0 var(--core-s-3);border:0;outline:0;resize:none;overflow-y:hidden;background:transparent;color:var(--core-text);font:var(--core-human-3);cursor:var(--core-cursor-text);transition:none}
+.core #q:focus-visible{outline:none}
+.core .box>#q{margin:var(--core-s-2) 0 var(--core-s-15)}
+.core #mirror{position:absolute;left:-9999px;top:0;visibility:hidden;padding:0 var(--core-s-2) 0 var(--core-s-3);white-space:pre-wrap;overflow-wrap:break-word}
+
+.core .atts{display:flex;flex-wrap:wrap;gap:var(--core-s-2);margin:0;padding:var(--core-s-1) 0 var(--core-s-2)}
+.core .pickchip{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-sm);margin:0 0 var(--core-s-1);padding:0 var(--core-s-1) 0 var(--core-s-3);border:0;border-radius:var(--core-r-md);background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-2);font:var(--core-human-1)}
+.core .pickchip svg{flex:none;width:14px;height:14px}
+.core .pickchip span{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .pickchip b{color:var(--core-text);font:var(--core-machine-1);font-variant-ligatures:none}
+.core .pickchip button{display:grid;place-items:center;flex:none;width:24px;height:24px;margin:0;padding:0;border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-3);cursor:var(--core-cursor-action)}
+@media (hover:hover){.core .pickchip button:hover{background:var(--core-fill-2);color:var(--core-text)}}
+
+/* Нижний ряд: слева «+» (всё, что можно приложить и включить) и включённые режимы, справа модель, голос и отправка.
+   Выключенные режимы в ряду не показываются — они в меню «+». */
+.core .brow{position:relative;display:flex;align-items:center;gap:var(--core-s-1);margin:0;min-height:var(--core-h-md)}
+.core .brow .ib{border-radius:var(--core-r-md)}
+.core #attachBtn{display:none}
+.core .tools svg{transition:transform var(--core-dur-2) var(--core-ease-out)}
+.core .tools[aria-expanded=true]{background:var(--core-fill-2);color:var(--core-text)}
+.core .tools[aria-expanded=true] svg:first-child{transform:rotate(45deg)}
+.core .tools-on{display:none}
+.core .webbtn{display:none;align-items:center;gap:var(--core-s-15);flex:0 1 auto;min-width:0;height:var(--core-h-sm);margin:0;padding:0 var(--core-s-3) 0 var(--core-s-2);border:0;border-radius:var(--core-r-full);background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text);font:var(--core-human-1);font-weight:var(--core-w-2);white-space:nowrap;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+.core .webbtn.on{display:inline-flex}
+.core .webbtn svg{flex:none;width:14px;height:14px}
+.core .webbtn>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media (hover:hover){.core .webbtn:hover{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.core #ptag{flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--core-text-3);font:var(--core-human-1)}
+.core #ptag:empty{display:none}
+
+.core .model{position:relative;flex:0 1 auto;min-width:0}
+.core .mbtn{display:inline-flex;align-items:center;gap:var(--core-s-15);max-width:100%;height:var(--core-h-md);margin:0;padding:0 var(--core-s-2);border:0;border-radius:var(--core-r-md);background:transparent;color:var(--core-text-2);font:var(--core-machine-2);font-variant-ligatures:none;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .mbtn #mname{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .mbtn>svg{flex:none;width:14px;height:14px;color:var(--core-text-3)}
+.core .mbtn .core-mini{margin-right:var(--core-s-05)}
+@media (hover:hover){.core .mbtn:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core .mbtn:active{background:var(--core-fill-2)}
+/* меню моделей (#menu) — в core-dialogs.css (шаг 5) */
+
+.core #micBtn.on{color:var(--core-text);background:var(--core-fill-2)}
+.core #micBtn.on::after{content:"";position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--core-point)}
+@media (prefers-reduced-motion:no-preference){.core:not([data-core-motion=reduce]) #micBtn.on::after{animation:core-breathe var(--chat-breathe) ease-in-out infinite alternate}}
+
+/* отправка — единственное раскалённое действие на экране */
+.core .send{position:relative;display:inline-grid;place-items:center;flex:none;width:var(--core-h-md);height:var(--core-h-md);margin:0 0 0 var(--core-s-05);padding:0;border:0;border-radius:var(--core-r-md);color:var(--core-text-on-heat);cursor:var(--core-cursor-action-on-heat,var(--core-cursor-action));
+  background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-4),var(--core-heat-3) 70%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 38%,transparent),0 6px 22px -8px color-mix(in srgb,var(--core-heat-3) 70%,transparent);
+  transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,color var(--core-dur-1) linear,filter var(--core-dur-1) linear,transform var(--core-dur-1) var(--core-ease-out)}
+.core .send svg{grid-area:1/1;width:18px;height:18px;stroke-width:2}
+.core .send .s-stop{display:none;fill:currentColor;stroke:none;width:14px;height:14px}
+.core .send.stop .s-up{display:none}
+.core .send.stop .s-stop{display:block}
+@media (hover:hover){.core .send:not(:disabled):hover{filter:brightness(1.09);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 64%,transparent),0 8px 28px -8px color-mix(in srgb,var(--core-heat-3) 92%,transparent)}}
+.core .send:not(:disabled):active{transform:scale(.96);filter:none;background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-3),var(--core-heat-2) 78%)}
+/* нечего отправлять — кнопка остывает */
+.core .send:disabled{background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-3);cursor:not-allowed}
+
+/* файлы тянут над окном — поле показывает, куда бросать; над самим полем — готово принять */
+.core.is-dragging .box-glass{--_edge:.8;box-shadow:var(--core-glass-hi),var(--_shadow),0 0 0 1px var(--core-line-2),0 0 0 6px var(--core-fill-1)}
+.core .box.drag .box-glass{--_edge:1;--_tint:var(--core-fill-1);box-shadow:var(--core-glass-hi),var(--_shadow),0 0 0 1px var(--core-focus),0 0 0 6px var(--core-fill-2)}
+
+/* ---------- лимит сообщений: кольцо вместо полосы ---------- */
+/* сама полоса — только обёртка для скриптов: её части встают прямо в ряд подписей над полем */
+.core .gw-bar{display:contents}
+.core .gw-warn,.core .gw-out{order:0;flex:1 1 100%}
+.core .gw-left{order:1;flex:0 1 auto}
+.core .note{order:2}
+.core .ul-hint{order:3}
+.core .dock-meta:has(.gw-warn,.gw-out,.ul-hint:not([hidden])){flex-wrap:wrap}
+.core .gw-left{display:flex;align-items:center;gap:var(--core-s-2);min-width:0;color:var(--core-text-3);font:var(--core-human-1)}
+.core .gw-left>span:not(.core-ring){min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* пока сообщений много, кольцо нейтральное; янтарь и остывание — только когда лимит на исходе */
+.core .gw-left .core-ring{--_c:var(--core-text-3)}
+.core .gw-left.low .core-ring{--_c:var(--core-heat-3)}
+@supports (color:color-mix(in oklab,red,blue)){.core .gw-left.low .core-ring{--_c:color-mix(in oklab,var(--core-heat-4) calc(var(--core-ring-v) * 100%),var(--core-heat-1))}}
+.core .gw-left.out .core-ring{--_c:var(--core-bad)}
+.core .gw-left button{flex:none;min-height:var(--core-s-6);margin:0 0 0 calc(var(--core-s-1) * -1);padding:0 var(--core-s-15);border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;text-decoration-color:var(--core-text-3);cursor:var(--core-cursor-action);transition:color var(--core-dur-1) linear,text-decoration-color var(--core-dur-1) linear}
+@media (hover:hover){.core .gw-left button:hover{color:var(--core-text);text-decoration-color:currentColor}}
+.core .gw-left .ul-chip{text-decoration:none;font:var(--core-machine-1);font-variant-ligatures:none;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px var(--core-line);padding:0 var(--core-s-2);margin-left:0}
+/* лимит на исходе — строка становится заметнее; исчерпан — статусный цвет */
+.core .gw-left.low{color:var(--core-text-2)}
+.core .gw-left.out{color:var(--core-bad)}
+.core .gw-warn,.core .gw-out{display:flex;align-items:center;gap:var(--core-s-3);width:100%;min-width:0;padding:var(--core-s-2) var(--core-s-2) var(--core-s-2) var(--core-s-4);border-radius:var(--core-r-md);background:var(--chat-plate);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text);font:var(--core-human-2)}
+.core .gw-warn>span,.core .gw-out>span{flex:1;min-width:0}
+/* узкое поле (открыто окно результата): подписи встают друг под другом и не съедают текст лимита */
+.core .dock-meta:has(+ .box.is-narrow){flex-wrap:wrap}
+.core .dock-meta:has(+ .box.is-narrow) .note{flex:1 1 100%;margin:0;text-align:left;white-space:normal}
+.core .gw-out small{display:block;color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none;font-variant-numeric:tabular-nums}
+.core .gw-bar .btn{flex:none;min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,filter var(--core-dur-1) linear}
+@media (hover:hover){.core .gw-bar .btn:hover{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.core .gw-x{display:grid;place-items:center;flex:none;width:var(--core-h-sm);height:var(--core-h-sm);margin:0;padding:0;border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-3);font:var(--core-human-3);line-height:1;cursor:var(--core-cursor-action)}
+@media (hover:hover){.core .gw-x:hover{background:var(--core-fill-1);color:var(--core-text)}}
+/* Лимит исчерпан: отправить нельзя, поэтому поле остывает, а главным действием экрана становится «Продолжить». */
+.core .gw-out{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 42%,transparent)}
+.core .gw-out .btn{background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-4),var(--core-heat-3) 70%);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 38%,transparent);color:var(--core-text-on-heat);font-weight:var(--core-w-3);cursor:var(--core-cursor-action-on-heat,var(--core-cursor-action))}
+@media (hover:hover){.core .gw-out .btn:hover{background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-4),var(--core-heat-3) 70%);filter:brightness(1.09)}}
+.core .dock:has(.gw-out) .send:not(.stop){background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-3);filter:none}
+.core .dock:has(.gw-out) #q::placeholder{color:color-mix(in srgb,var(--core-text-3) 60%,transparent)}
+.core .dock:has(.gw-out) .box-glass{--_edge:.2}
+.core .ul-hint{display:flex;align-items:center;gap:var(--core-s-2);flex:1 1 100%;min-width:0;margin:0;color:var(--core-text-3);font:var(--core-human-1)}
+.core .ul-hint.low{color:var(--core-bad)}
+.core .ul-hint button{margin:0;padding:0;border:0;background:none;color:var(--core-text);font:inherit;font-weight:var(--core-w-2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;cursor:var(--core-cursor-action)}
+
+/* кнопка «вниз» */
+.core .cv-down{position:absolute;left:50%;top:calc(var(--core-h-md) * -1 - var(--core-s-5));z-index:5;display:grid;place-items:center;width:var(--core-h-md);height:var(--core-h-md);margin:0 0 0 calc(var(--core-h-md) / -2);padding:0;transform:none;border:0;border-radius:50%;background:var(--chat-plate);box-shadow:inset 0 0 0 1px var(--core-line-2),var(--core-shadow-near);color:var(--core-text-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .cv-down svg{width:var(--core-icon);height:var(--core-icon)}
+@media (hover:hover){.core .cv-down:hover{color:var(--core-text);background:color-mix(in srgb,var(--core-edge) 10%,var(--core-scene))}}
+
+/* ---------- пустой чат ---------- */
+.core .main.empty .top,.core .main.empty .chat{background-color:transparent}
+.core .hello{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 var(--core-s-4);text-align:center}
+/* приветствие лежит прямо на Ядре: под ним оно приглушено мягким пятном цвета сцены, без края и без размытия */
+.core .hello::before{content:"";position:absolute;z-index:-1;inset:calc(var(--core-s-5) * -1) 10% calc(var(--core-s-6) * -1);pointer-events:none;border-radius:var(--core-s-16);background:color-mix(in srgb,var(--core-scene) 94%,transparent);filter:blur(var(--core-s-6))}
+.core .hello h1{margin:0;color:var(--core-text);font:var(--core-human-6);letter-spacing:var(--core-track-6);text-wrap:balance;cursor:var(--core-cursor-text)}
+.core .hi-sub{margin:var(--core-s-3) 0 0;color:var(--core-text-2);font:var(--core-human-3)}
+/* то же для подписи над полем: мелкий текст третьего уровня не должен лежать на точках */
+.core .main.empty .dock-meta{position:relative}
+.core .main.empty .dock-meta::before{content:"";position:absolute;z-index:-1;inset:calc(var(--core-s-4) * -1) calc(var(--core-s-3) * -1) 0;pointer-events:none;border-radius:var(--core-r-md);background:var(--core-scene);filter:blur(var(--core-s-2))}
+.core .pinfo{max-width:36rem;margin:var(--core-s-4) 0 0;color:var(--core-text-2);font:var(--core-human-1)}
+.core .pinfo button{margin:0;padding:0;border:0;background:none;color:var(--core-text);font:inherit;font-weight:var(--core-w-2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;text-decoration-color:var(--core-text-3);cursor:var(--core-cursor-action)}
+
+/* подсказки: одна тихая полка дальнего стекла под полем (один размытый слой вместо девяти) */
+.core #sugg{width:auto;max-width:var(--chat-col);margin:var(--core-s-3) auto 0;padding:var(--core-s-15);border-radius:var(--core-r-md);--core-at-x:var(--core-x);--core-at-y:var(--core-y)}
+.core #sugg:empty{display:none}
+.core .cu-cats{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:var(--core-s-15);margin:0;padding:var(--core-s-15) var(--core-s-15) var(--core-s-2)}
+.core .cu-cats button{min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-3);border:0;border-radius:var(--core-r-full);background:transparent;box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+@media (hover:hover){.core .cu-cats button:hover{background:var(--core-fill-2);color:var(--core-text)}}
+.core .cu-cats button:active{background:var(--core-fill-1)}
+.core .sugg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--core-s-05)}
+.core .sugg button{display:flex;flex-direction:column;align-items:flex-start;gap:var(--core-s-2);min-width:0;margin:0;padding:var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:transparent;color:var(--core-text);text-align:left;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear}
+.core .sugg svg{width:var(--core-icon);height:var(--core-icon);color:var(--core-text-3);transition:color var(--core-dur-1) linear}
+.core .sugg span{display:block;min-width:0}
+.core .sugg b{display:block;color:var(--core-text);font:var(--core-human-2);font-weight:var(--core-w-2)}
+.core .sugg small{display:block;margin:var(--core-s-05) 0 0;color:var(--core-text-3);font:var(--core-human-1)}
+@media (hover:hover){.core .sugg button:hover{background:var(--core-fill-1)}.core .sugg button:hover svg{color:var(--core-text)}}
+.core .sugg button:active{background:var(--core-fill-2)}
+.core .sgpro{display:inline-block;margin-left:var(--core-s-1);padding:0 var(--core-s-1);border-radius:calc(var(--core-r-sm) - 4px);background:var(--core-fill-2);color:var(--core-text-2);font:var(--core-machine-1);font-style:normal;font-variant-ligatures:none;vertical-align:1px}
+
+@media (min-width:861px){
+  .core .main.empty .chat{flex:0 0 auto;margin-top:auto;overflow:visible;scrollbar-gutter:auto}
+  .core .main.empty .col{padding:0 var(--chat-pad) var(--core-s-8)}
+  .core .main.empty .dock{padding-bottom:0}
+  .core .main.empty .note{display:none}
+  .core .main.empty .dock-meta{min-height:0;padding-bottom:var(--core-s-2)}
+  .core .main.empty #sugg{margin-bottom:auto}
+  .core .main.empty::after{content:"";flex:0 0 var(--chat-top)}
+  .core .main.empty #sugg{margin-left:auto;margin-right:auto;width:calc(100% - (var(--chat-pad) - var(--core-s-4)) * 2)}
+}
+
+/* ---------- узкое поле ввода: включённые режимы показывает сама кнопка «+» ---------- */
+.core .box.is-narrow .webbtn.on{display:none}
+.core .box.is-narrow .tools.has-on{width:auto;padding:0 var(--core-s-3) 0 var(--core-s-2);gap:var(--core-s-2);display:inline-flex;align-items:center;background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text)}
+.core .box.is-narrow .tools.has-on .tools-on{display:inline-flex;align-items:center;gap:var(--core-s-2)}
+.core .tools-on svg{width:14px;height:14px}
+.core .box.is-narrow .mbtn .core-mini{display:none}
+
+/* ---------- меню «+» (ближнее стекло, компонент core-menu) ---------- */
+.core-menu.chat-tools{min-width:232px}
+.core-menu.chat-tools .core-menu__item svg{width:var(--core-icon);height:var(--core-icon);stroke:currentColor;fill:none}
+
+/* ---------- телефон ---------- */
+@media (max-width:860px){
+  .core{--chat-pad:var(--core-s-4);--chat-top:calc(48px + env(safe-area-inset-top,0px))}
+  .core .side{position:fixed;z-index:30;inset:var(--chat-gap) auto var(--chat-gap) var(--chat-gap);width:min(86vw,320px);margin:0;padding-top:max(var(--core-s-15),env(safe-area-inset-top));padding-bottom:max(var(--core-s-15),env(safe-area-inset-bottom));transform:translateX(calc(-100% - var(--chat-gap) * 2));visibility:hidden;opacity:1;transition:transform var(--core-dur-3) var(--core-ease-in),visibility 0s var(--core-dur-3)}
+  .core .side.closed{width:min(86vw,320px);padding:max(var(--core-s-15),env(safe-area-inset-top)) var(--core-s-15) max(var(--core-s-15),env(safe-area-inset-bottom));opacity:1}
+  .core .side>*{min-width:0}
+  .core .side.mopen{transform:none;visibility:visible;transition:transform var(--core-dur-3) var(--core-ease-out),visibility 0s}
+  .core .overlay{display:block;position:fixed;inset:0;z-index:25;background:var(--core-scrim);opacity:0;pointer-events:none;transition:opacity var(--core-dur-3) linear}
+  .core .overlay.on{opacity:1;pointer-events:auto}
+  .core .top{padding:env(safe-area-inset-top,0px) max(var(--core-s-1),env(safe-area-inset-right)) 0 max(var(--core-s-1),env(safe-area-inset-left))}
+  .core .side.closed~.main .top,.core .top:has(#openSide:not([hidden])){padding-left:max(var(--core-s-1),env(safe-area-inset-left))}
+  .core .gw-share{min-height:var(--core-h-md);width:var(--core-h-md);padding:0;justify-content:center;box-shadow:none}
+  .core .gw-share span{display:none}
+  .core .gw-share svg{width:18px;height:18px}
+  .core .col{padding:var(--core-s-2) var(--chat-pad) var(--core-s-8)}
+  .core .bub{max-width:88%}
+  .core .acts{opacity:1}
+  .core .acts .ib{width:var(--core-hit);height:var(--core-hit)}
+  .core .acts{margin-left:calc(var(--core-s-3) * -1)}
+  .core .acts.u{margin-right:calc(var(--core-s-3) * -1)}
+  .core .dock{padding:0 max(var(--core-s-2),env(safe-area-inset-right)) max(var(--core-s-2),env(safe-area-inset-bottom)) max(var(--core-s-2),env(safe-area-inset-left))}
+  .core .dock-meta{padding:0 var(--core-s-2) var(--core-s-15)}
+  .core .dock-meta{flex-wrap:wrap}
+  .core .note{flex:1 1 100%;margin:0;text-align:left;white-space:normal}
+  .core .dock:focus-within .note{display:none}
+  .core .brow .ib,.core .send,.core .mbtn{width:var(--core-hit);height:var(--core-hit)}
+  .core .mbtn{width:auto}
+  .core .box.is-narrow .tools.has-on{width:auto}
+  .core .hello h1{font:var(--core-human-5);letter-spacing:var(--core-track-5)}
+  .core .main.empty .chat{display:flex;align-items:center}
+  .core .main.empty .col{width:100%;padding-bottom:var(--core-s-4)}
+  .core .main.empty .dock{order:2}
+  .core .main.empty .note{display:none}
+  .core #sugg{margin:0 max(var(--core-s-2),env(safe-area-inset-right)) var(--core-s-2) max(var(--core-s-2),env(safe-area-inset-left))}
+  .core .cu-cats{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .core .cu-cats::-webkit-scrollbar{display:none}
+  .core .cu-cats button{flex:none;min-height:var(--core-h-md)}
+  .core .sugg{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .core .sugg button{flex-direction:row;align-items:center;gap:var(--core-s-3);min-height:var(--core-hit)}
+  .core .sugg small{display:none}
+  .core .item,.core .new,.core .search,.core .search input{min-height:var(--core-hit)}
+  .core .search input{height:var(--core-hit);font-size:var(--core-fs-3)}
+  .core .item .x,.core .item .gear,.core .tgx,.core .sec .ib{width:var(--core-hit);height:var(--core-hit)}
+  .core .language-switch a{min-width:var(--core-hit);min-height:var(--core-hit)}
+  .core .cv-down{width:var(--core-hit);height:var(--core-hit);margin-left:calc(var(--core-hit) / -2);top:calc(var(--core-hit) * -1 - var(--core-s-4))}
+}
+/* клавиатура на экране оставляет мало места — подпись под лентой уступает его разговору */
+@media (max-width:860px) and (max-height:480px){.core .note{display:none}}
+
+/* Без видеокарты (сцена ушла в свечение) фон под стеклом должен стоять: движущееся свечение процессор размывал бы
+   заново на каждый кадр. Само размытие на такой странице тоже отключается — это делает 23-core-chat.js. */
+.core[data-core-scene=glow] .core-scene::before,.core[data-core-scene=glow] .core-scene::after{animation:none}
+@media (forced-colors:active){.core .bub,.core .errbox,.core .gw-warn,.core .gw-out{outline:1px solid CanvasText}}

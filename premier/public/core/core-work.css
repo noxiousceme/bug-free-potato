@@ -1,0 +1,621 @@
+/* Premier · Core — всё, что делает и отдаёт ИИ (редизайн, шаг 4).
+   Окно результата, журнал работы, блоки кода, карточки результатов и медиа, облачный компьютер, папка, помощник.
+   Подключается после core-chat.css. Опирается на существующие id, классы и data-атрибуты: разметку строят скрипты
+   public/js, public/cloud.js, public/folder.js, public/agent.js. Все значения — из токенов --core-*.
+   Старые правила этих частей из моста /css/chat-legacy.css убраны (scripts/build-chat-legacy.py, список CLAIM). */
+
+.core{
+  --work-grip:var(--chat-gap);                 /* ширина делителя между чатом и окном результата */
+  --work-side:calc(var(--chat-side) + var(--chat-gap));
+  --work-chat-min:360px;                       /* меньше этого чат не сжимается, как бы ни тянули делитель */
+  --work-plate:var(--chat-plate);              /* пластина на чистой сцене: карточки результатов */
+  --work-well:var(--core-glass-dense);         /* плотное стекло: код, терминал, вывод программ */
+  --work-rail:7px;                             /* ось журнала работы: под центром знака состояния */
+}
+.core .side.closed~.pane{--work-side:0px}
+
+/* ---------- общая кнопка внутри частей шага 4 (класс .btn общий с окнами шага 5, поэтому задан заново и целиком) ---------- */
+.core :is(.msg,.pane,.clw,.agset) .btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--core-s-15);width:auto;height:auto;min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-3);
+  border:0;border-radius:var(--core-r-sm);background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text);
+  font:var(--core-human-1);font-weight:var(--core-w-2);text-decoration:none;white-space:nowrap;cursor:var(--core-cursor-action);
+  transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,color var(--core-dur-1) linear,opacity var(--core-dur-1) linear,transform var(--core-dur-1) var(--core-ease-out);
+}
+.core :is(.msg,.pane,.clw,.agset) .btn svg{width:var(--core-icon);height:var(--core-icon)}
+@media (hover:hover){.core :is(.msg,.pane,.clw,.agset) .btn:hover{background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.core :is(.msg,.pane,.clw,.agset) .btn:active{background:var(--core-fill-3);transform:scale(.98)}
+.core :is(.msg,.pane,.clw,.agset) .btn:disabled,.core :is(.msg,.pane,.clw,.agset) .btn[aria-disabled=true]{opacity:.45;box-shadow:inset 0 0 0 1px var(--core-line);cursor:not-allowed;transform:none}
+/* главное действие карточки — светом, не янтарём: янтарь на экране один, у отправки */
+.core :is(.msg,.pane,.clw,.agset) .btn.pri{background:var(--core-on);box-shadow:none;color:var(--core-on-ink)}
+@media (hover:hover){.core :is(.msg,.pane,.clw,.agset) .btn.pri:hover{background:color-mix(in srgb,var(--core-on) 86%,transparent);box-shadow:none}}
+.core :is(.msg,.pane,.clw,.agset) .btn.pri:disabled{background:var(--core-fill-2);box-shadow:none;color:var(--core-text-3)}
+.core :is(.msg,.pane,.clw,.agset,.fsmenu) .dim{color:var(--core-text-3)}
+
+/* ======================================================================================================
+   1. ОКНО РЕЗУЛЬТАТА — стеклянная рама средней глубины; результат пользователя внутри — единственный
+      яркий и непрозрачный предмет на экране. Рама его не тонирует и не размывает: это отдельная страница.
+   ====================================================================================================== */
+.core .pane{
+  --work-pane:clamp(380px,calc(100vw - var(--work-side) - 560px),820px);
+  --_w:max(320px,min(var(--work-pane),calc(100vw - var(--work-side) - var(--work-chat-min))));
+  position:relative;display:flex;flex:none;width:0;min-width:0;visibility:hidden;
+  transition:width 0s var(--core-dur-2),visibility 0s var(--core-dur-2);
+}
+.core .pane.on{width:var(--_w);visibility:visible;transition:none}
+
+/* рама рождается из Ядра: растёт из точки, где оно стоит, с лёгким разворотом, и сворачивается обратно в искру */
+.core .pane-in{
+  display:flex;flex-direction:column;flex:none;width:calc(var(--_w) - var(--work-grip) - var(--chat-gap));height:calc(100% - var(--chat-gap) * 2);
+  margin:var(--chat-gap) var(--chat-gap) var(--chat-gap) 0;padding:var(--core-s-2);border-radius:var(--core-r-lg);
+  container:pane / inline-size;
+  opacity:0;transform:perspective(1400px) rotateY(-7deg) scale(.94);transform-origin:var(--work-ox,0%) var(--work-oy,100%);
+  transition:opacity var(--core-dur-2) var(--core-ease-in),transform var(--core-dur-2) var(--core-ease-in);
+}
+.core .pane.on .pane-in{opacity:1;transform:none;transition:opacity var(--core-dur-3) var(--core-ease-out),transform var(--core-dur-3) var(--core-ease-out)}
+.core .pane.is-sizing .pane-in,.core .pane.is-sizing{transition:none}
+/* на компьютере Ядро за окном не проходит (оно стоит по центру чата) — размытие ничего бы не изменило, но считалось бы
+   при каждом движении делителя и каждом кадре сцены. Материал остаётся: заливка, кромка, тень. */
+@media (min-width:861px){.core .pane-in{-webkit-backdrop-filter:none;backdrop-filter:none}}
+
+/* делитель: тонкая черта в зазоре между чатом и окном; тянется мышью, пальцем и стрелками */
+.core .pane-grip{position:relative;z-index:1;flex:none;width:var(--work-grip);margin:var(--chat-gap) 0;border-radius:var(--core-r-full);cursor:col-resize;touch-action:none;outline-offset:0}
+.core .pane-grip::before{content:"";position:absolute;inset:0 -4px}
+.core .pane-grip::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:40px;margin:-20px 0 0 -1px;border-radius:1px;background:var(--core-line-2);transition:height var(--core-dur-2) var(--core-ease-out),margin var(--core-dur-2) var(--core-ease-out),background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .pane-grip:hover::after{height:72px;margin-top:-36px;background:var(--core-text-3)}}
+.core .pane-grip:focus-visible::after,.core .pane.is-sizing .pane-grip::after{height:72px;margin-top:-36px;background:var(--core-focus)}
+.core .pane.is-sizing #pFrame{pointer-events:none}
+html.core.is-sizing,html.core.is-sizing *{cursor:col-resize!important;-webkit-user-select:none!important;user-select:none!important}
+
+/* --- шапка: название · виды · тихая группа инструментов · «Опубликовать» · закрыть --- */
+.core .phead{display:flex;align-items:center;gap:var(--core-s-2);flex:none;min-height:var(--core-h-md);margin:0 0 var(--core-s-2);padding:0 0 0 var(--core-s-2)}
+.core .ph-id{display:flex;align-items:center;gap:var(--core-s-2);flex:1 1 0;min-width:0}
+.core .ph-kind{display:grid;place-items:center;flex:none;width:20px;height:20px;color:var(--core-text-3)}
+.core .ph-kind svg{width:var(--core-icon);height:var(--core-icon)}
+.core .ptitle{min-width:0;overflow:hidden;color:var(--core-text);font:var(--core-human-2);font-weight:var(--core-w-3);white-space:nowrap;text-overflow:ellipsis}
+
+.core .tabs{display:flex;flex:none;gap:var(--core-s-05);height:var(--core-h-md);margin:0;padding:var(--core-s-05);border:0;border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .tabs button{flex:1 1 auto;height:100%;margin:0;padding:0 var(--core-s-3);border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-2);font:var(--core-human-2);font-weight:var(--core-w-2);white-space:nowrap;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+@media (hover:hover){.core .tabs button:hover{color:var(--core-text)}}
+.core .tabs button.on{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text)}
+
+.core .ph-tools{display:flex;flex:none;align-items:center}
+.core .ph-tools .ib svg{width:var(--core-icon);height:var(--core-icon)}
+.core .ph-tools .ib .pop{color:var(--core-ok)}
+.core #pClose{margin-left:calc(var(--core-s-1) * -1)}
+
+/* публикация — главное действие окна: единственная кнопка шапки с подписью и светлой заливкой («включено — свет») */
+.core .ph-pub{flex:none;gap:var(--core-s-15);padding:0 var(--core-s-3) 0 var(--core-s-2);background:var(--core-on);box-shadow:none;color:var(--core-on-ink);-webkit-backdrop-filter:none;backdrop-filter:none}
+.core .ph-pub svg{width:var(--core-icon);height:var(--core-icon)}
+@media (hover:hover){.core .ph-pub:hover{background:color-mix(in srgb,var(--core-on) 86%,transparent);box-shadow:none}}
+.core .ph-pub:active{background:color-mix(in srgb,var(--core-on) 76%,transparent)}
+.core .ph-pub[aria-busy=true]{background:var(--core-fill-2)}
+/* опубликовано: кнопка гаснет до значка с отметкой — действие сделано, адрес стоит строкой ниже */
+.core .ph-pub.on{position:relative;width:var(--core-h-sm);padding:0;background:transparent;box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text)}
+.core .ph-pub.on span{display:none}
+.core .ph-pub.on::after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--core-ok);box-shadow:0 0 0 2px var(--core-solid-mid)}
+
+/* узкое окно: шапка в две строки — сверху название и главное действие, ниже виды и инструменты */
+@container pane (max-width:760px){
+  .core .phead{flex-wrap:wrap;row-gap:var(--core-s-15)}
+  .core .ph-id{order:1;flex:1 1 0}
+  .core .ph-pub{order:2}
+  .core #pClose{order:3}
+  .core .tabs{order:4;margin-right:auto}
+  .core .ph-tools{order:5}
+  .core .phead::after{content:"";order:3;flex:0 0 100%}
+}
+/* браузер без контейнерных запросов: шапка всегда в две строки — ничего не обрезается при любой ширине окна */
+@supports not (container-type:inline-size){
+  .core .phead{flex-wrap:wrap;row-gap:var(--core-s-15)}
+  .core .ph-id{order:1;flex:1 1 0}
+  .core .ph-pub{order:2}
+  .core #pClose{order:3}
+  .core .tabs{order:4;margin-right:auto}
+  .core .ph-tools{order:5}
+  .core .phead::after{content:"";order:3;flex:0 0 100%}
+}
+
+/* --- адресная строка: опубликованный результат. Адрес — машинным голосом, как в строке окна --- */
+.core .pubbar{display:flex;flex:none;flex-wrap:wrap;align-items:center;gap:var(--core-s-1) var(--core-s-2);min-height:var(--core-h-md);margin:0 0 var(--core-s-2);padding:var(--core-s-05) var(--core-s-05) var(--core-s-05) var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-3);font:var(--core-human-1)}
+.core .pubbar:not(.animbar)::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--core-ok)}
+.core .pubbar>span{flex:none}
+.core .pubbar>a{flex:1 1 8rem;min-width:0;overflow:hidden;color:var(--core-text);font:var(--core-machine-2);font-variant-ligatures:none;text-decoration:none;white-space:nowrap;text-overflow:ellipsis;cursor:var(--core-cursor-action)}
+@media (hover:hover){.core .pubbar>a:hover{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em}}
+.core .pubbar button{flex:none;min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-2);border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core .pubbar button:hover{background:var(--core-fill-2);color:var(--core-text)}}
+.core .pubbar button[data-done]{color:var(--core-ok)}
+.core .pub-upgrade{display:flex;flex:0 0 100%;flex-wrap:wrap;align-items:center;gap:var(--core-s-1) var(--core-s-2);margin:0 0 0 calc(var(--core-s-3) * -1);padding:var(--core-s-1) 0 var(--core-s-05) var(--core-s-3);border-top:1px solid var(--core-line);color:var(--core-text-3)}
+.core .pub-upgrade>span{flex:1 1 180px;min-width:0}
+.core .pubbar .pub-upgrade button{min-height:var(--core-h-sm);padding:0 var(--core-s-2);color:var(--core-text);text-align:left;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;text-decoration-color:var(--core-text-3);white-space:normal}
+
+/* --- полоса анимации: сведения о ролике машинным голосом, запись в MP4; пока сервер пишет ролик — это работа машины --- */
+.core .animbar{position:relative;overflow:hidden;padding-right:var(--core-s-05)}
+.core .animbar .anim-info{flex:1 1 8rem;min-width:0;overflow:hidden;color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none;white-space:nowrap;text-overflow:ellipsis}
+.core .animbar .anim-info.anim-err{color:var(--core-bad);font:var(--core-human-1);white-space:normal}
+.core .animbar #pMp4{display:inline-flex;align-items:center;gap:var(--core-s-15);background:var(--core-fill-2);color:var(--core-text)}
+.core .animbar #pMp4 svg{width:var(--core-icon);height:var(--core-icon)}
+.core .animbar #pMp4:disabled{background:transparent;color:var(--core-text-3);cursor:progress}
+.core .anim-prog{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--core-line)}
+.core .anim-prog i{display:block;height:100%;background:var(--core-point);transition:width var(--core-dur-4) var(--core-ease-move)}
+
+/* --- сцена: здесь лежит результат. Рамка — снаружи, поверх результата не рисуется ничего --- */
+.core .pbody{position:relative;flex:1 1 0;min-height:0;overflow:hidden;border-radius:var(--core-r-md);background:var(--work-well);box-shadow:0 0 0 1px var(--core-line);transition:box-shadow var(--core-dur-2) linear}
+.core .pbody>.hide{display:none!important}
+.core #pFrame{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:Canvas;color-scheme:light}
+.core .pane:not(.on) .pbody{opacity:0;transition:opacity var(--core-dur-1) linear}
+/* выбор элемента: рамка сцены загорается цветом фокуса, кнопка в шапке горит */
+.core .pane:has(#pPick.on) .pbody{box-shadow:0 0 0 2px var(--core-focus)}
+
+.core #pCode{position:absolute;inset:0;margin:0;padding:var(--core-s-4) var(--core-s-5);overflow:auto;color:var(--core-text);font:var(--core-machine-2);font-variant-ligatures:none;white-space:pre;tab-size:2;-moz-tab-size:2;cursor:var(--core-cursor-text)}
+
+/* ожидание: точки собираются в очертания будущей страницы (шапка, две строки, три карточки) */
+.core .pwait{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:var(--core-s-6);padding:var(--core-s-8);overflow:hidden}
+.core .pwait .core-gather{grid-template-columns:repeat(3,1fr);width:min(26rem,70cqw)}
+.core .pwait .core-gather>*{grid-column:1/-1}
+.core .pwait .core-gather>:nth-child(1){--h:104px}
+.core .pwait .core-gather>:nth-child(2){--w:62%}
+.core .pwait .core-gather>:nth-child(3){--w:38%;margin-top:0}
+.core .pwait .core-gather>:nth-child(n+4){grid-column:auto;--h:64px}
+.core .pwait p{max-width:26rem;margin:0;color:var(--core-text-2);font:var(--core-human-2);text-align:center;text-wrap:balance}
+
+/* --- версии: список версий и изменения выбранной --- */
+.core .version-panel{position:absolute;inset:0;padding:var(--core-s-5) var(--core-s-6) var(--core-s-8);overflow:auto;color:var(--core-text-2);font:var(--core-human-2)}
+.core .version-panel h3{margin:0 0 var(--core-s-1);color:var(--core-text);font:var(--core-human-2);font-weight:var(--core-w-3)}
+.core .version-panel h3:not(:first-child){margin-top:var(--core-s-8)}
+.core .version-panel p{margin:0 0 var(--core-s-3);color:var(--core-text-2);font:var(--core-human-1)}
+.core .version-panel>small,.core .version-panel details>small{display:block;margin:var(--core-s-2) 0 0;color:var(--core-text-3);font:var(--core-human-1)}
+.core .version-panel>.core-btn{margin:0 0 var(--core-s-3)}
+.core .version-panel .core-btn{-webkit-backdrop-filter:none;backdrop-filter:none}
+.core .version-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--core-s-05) var(--core-s-2);margin:0 calc(var(--core-s-3) * -1);padding:var(--core-s-2) var(--core-s-3);border-radius:var(--core-r-sm);box-shadow:0 1px 0 var(--core-line)}
+.core .version-row b{grid-column:1;min-width:0;overflow:hidden;color:var(--core-text);font:var(--core-human-2);font-weight:var(--core-w-2);white-space:nowrap;text-overflow:ellipsis}
+.core .version-row small{grid-column:1;grid-row:2;justify-self:start;color:var(--core-text-3);font:var(--core-machine-1);font-variant-ligatures:none}
+.core .version-row small[data-vs=passed]{color:var(--core-ok)}
+.core .version-row small[data-vs=failed]{color:var(--core-bad)}
+.core .version-row small[data-vs=unverified]{color:var(--core-warn)}
+.core .version-row .core-btn{grid-row:1 / span 2}
+.core .version-row.cur{background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line-2)}
+.core .version-row.act b::before{content:"";display:inline-block;width:6px;height:6px;margin:0 var(--core-s-2) 2px 0;border-radius:50%;background:var(--core-on);vertical-align:middle}
+.core .version-panel label{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2);margin:var(--core-s-2) 0 var(--core-s-3);color:var(--core-text-2);font:var(--core-human-1)}
+.core .version-panel label .core-input{flex:1 1 12rem;width:auto;min-width:0;max-width:24rem}
+.core .version-panel details{margin:0 0 var(--core-s-2);border-radius:var(--core-r-sm);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .version-panel summary{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:inherit;color:var(--core-text);font:var(--core-machine-1);font-variant-ligatures:none;list-style:none;cursor:var(--core-cursor-action)}
+.core .version-panel summary::-webkit-details-marker{display:none}
+.core .version-panel summary::before{content:"";flex:none;width:var(--core-icon);height:var(--core-icon);background:var(--core-text-3);-webkit-mask:var(--core-glyph-chevron) center/contain no-repeat;mask:var(--core-glyph-chevron) center/contain no-repeat;transform:rotate(-90deg);transition:transform var(--core-dur-2) var(--core-ease-out)}
+.core .version-panel details[open]>summary::before{transform:none}
+.core .version-panel details>small{padding:0 var(--core-s-3) var(--core-s-2)}
+.core .pbody #pVersions .diff-code{position:static;margin:0;padding:var(--core-s-2) 0;overflow:auto;border-top:1px solid var(--core-line);color:var(--core-text-2);font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-ligatures:none;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2}
+.core .diff-code>span{display:inline-block;width:100%;padding:0 var(--core-s-3)}
+.core .diff-add{background:var(--core-ok-soft);color:var(--core-ok)}
+.core .diff-remove{background:var(--core-bad-soft);color:var(--core-bad)}
+
+/* --- переключатель «чат / результат» (строит js/24-core-work.js; виден только на телефоне) --- */
+.core .view-sw{display:none}
+
+/* ======================================================================================================
+   2. ЖУРНАЛ РАБОТЫ — машинным голосом. Одна строка: что делала машина и сколько это заняло; раскрывается
+      в шаги и размышления. Идущий шаг — место на экране, где разрешён янтарь: это и значит «ИИ работает».
+   ====================================================================================================== */
+.core :is(.wl,.think,.run,.fsop,.fileb,.validation-box)>summary{list-style:none;cursor:var(--core-cursor-action)}
+.core :is(.wl,.think,.run,.fsop,.fileb,.validation-box)>summary::-webkit-details-marker{display:none}
+/* шеврон раскрытия — один на все раскрывающиеся строки */
+.core :is(.wl,.think,.run,.fsop,.fileb,.validation-box)>summary::after{content:"";flex:none;width:var(--core-icon);height:var(--core-icon);margin-left:auto;background:var(--core-text-3);-webkit-mask:var(--core-glyph-chevron) center/contain no-repeat;mask:var(--core-glyph-chevron) center/contain no-repeat;transform:rotate(-90deg);transition:transform var(--core-dur-2) var(--core-ease-out),background-color var(--core-dur-1) linear}
+.core :is(.wl,.think,.run,.fsop,.fileb,.validation-box)[open]>summary::after{transform:none}
+@media (hover:hover){.core :is(.wl,.think,.run,.fsop,.fileb,.validation-box)>summary:hover::after{background:var(--core-text)}}
+
+.core .wl{margin:0 0 var(--core-s-3);color:var(--core-text-2);font:var(--core-machine-2);font-variant-ligatures:none}
+.core .wl>summary{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-sm);margin:0 calc(var(--core-s-2) * -1);padding:0 var(--core-s-2);border-radius:var(--core-r-sm);transition:background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .wl>summary:hover{background:var(--core-fill-1)}}
+.core .wl>summary::after{order:5;margin-left:0}
+/* знак состояния: готово — галочка, идёт — частица Ядра, был сбой — знак статуса */
+.core .wl-st{position:relative;flex:none;width:var(--core-icon);height:var(--core-icon);background:var(--core-text-3);-webkit-mask:var(--core-glyph-check) center/12px no-repeat;mask:var(--core-glyph-check) center/12px no-repeat}
+.core .wl.bad .wl-st{background:var(--core-bad);-webkit-mask-image:var(--core-glyph-close);mask-image:var(--core-glyph-close)}
+.core .wl.on .wl-st{background:none;-webkit-mask:none;mask:none}
+.core .wl.on .wl-st::before{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--core-point);box-shadow:0 0 8px var(--core-point)}
+.core .wl-t{flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .wl.on .wl-t{color:var(--core-text)}
+.core .wl-ms{flex:none;color:var(--core-text-3);font-variant-numeric:tabular-nums}
+.core .wl-ms::before{content:"·";margin-right:var(--core-s-2)}
+/* след работы: значки шагов по порядку, справа — тихая подпись того, из чего сложился ответ */
+.core .wl-ic{order:4;display:flex;flex:none;align-items:center;gap:var(--core-s-15);margin-left:auto;padding-left:var(--core-s-2);color:var(--core-text-3)}
+.core .wl-ic svg{width:14px;height:14px;stroke-width:1.6}
+.core .wl-ic i{font:var(--core-machine-1);font-style:normal}
+
+/* пока идёт работа и текста ещё нет, вторая частица (курсор ответа) не нужна */
+.core .wl.on~.md>.cursor:only-child{display:none}
+.core .wl-b{position:relative;margin:var(--core-s-1) 0 var(--core-s-1) var(--work-rail);padding:var(--core-s-05) 0 var(--core-s-05) calc(var(--core-s-4) + 1px)}
+.core .wl-b::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--core-line-2),var(--core-line))}
+
+.core .steps{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin:0}
+.core .step{display:flex;align-items:flex-start;gap:var(--core-s-2);min-height:var(--core-h-sm);padding:var(--core-s-1) 0;color:var(--core-text-2);font:var(--core-machine-2);font-variant-ligatures:none;overflow-wrap:anywhere}
+.core .step>svg{flex:none;width:14px;height:14px;margin:3px 1px 0;color:var(--core-text-3);stroke-width:1.6}
+.core .step>span{min-width:0}
+.core .step.on{color:var(--core-text)}
+.core .step.on>svg{color:var(--core-point)}
+.core .step.bad,.core .step.bad>svg{color:var(--core-bad)}
+
+/* размышления открываются из журнала — строкой среди шагов; сам текст — человеческим голосом */
+.core .think{margin:0}
+.core .think>summary{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-sm);padding:var(--core-s-1) 0;color:var(--core-text-2);font:var(--core-machine-2);font-variant-ligatures:none}
+.core .think>summary>svg{flex:none;width:14px;height:14px;margin:0 1px;color:var(--core-text-3);stroke-width:1.6}
+.core .think>summary::after{margin-left:0}
+.core .think.on>summary{color:var(--core-text)}
+.core .think.on>summary>svg{color:var(--core-point)}
+.core .think-b{max-height:15rem;margin:var(--core-s-05) 0 var(--core-s-2);padding:var(--core-s-2) var(--core-s-3);overflow:auto;border-radius:var(--core-r-sm);background:var(--core-fill-1);color:var(--core-text-2);font:var(--core-human-2);white-space:pre-wrap;overflow-wrap:anywhere;cursor:var(--core-cursor-text)}
+
+/* --- действия в папке и на компьютере: чтение — строкой журнала, изменение — карточкой с тем, что именно меняется --- */
+.core .fsops{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--core-s-15);margin:0 0 var(--core-s-3)}
+.core .fsops>.step{min-height:0;padding:var(--core-s-05) 0}
+.core .fsop{position:relative;border-radius:var(--core-r-sm);background:var(--work-plate);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-2);font:var(--core-human-1)}
+.core .fsop>summary{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:inherit}
+.core .fsop>summary>svg{flex:none;width:14px;height:14px;color:var(--core-text-3);stroke-width:1.6}
+.core .fsop>summary>b{flex:none;color:var(--core-text);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.core .fsop>summary>code{flex:0 1 auto;min-width:0;overflow:hidden;padding:0;border:0;background:none;color:var(--core-text-2);font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-ligatures:none;white-space:nowrap;text-overflow:ellipsis}
+.core .fsc{display:inline-flex;flex:none;gap:var(--core-s-15);font:var(--core-machine-1);font-variant-numeric:tabular-nums}
+.core .fsc em{font-style:normal}
+.core .fsc .a{color:var(--core-ok)}
+.core .fsc .d{color:var(--core-bad)}
+.core .fss{flex:none;margin-left:auto;color:var(--core-text-3);font:var(--core-machine-1)}
+.core .fsop>summary>.fss+*{margin-left:0}
+.core .fsop>summary:has(.fss)::after{margin-left:0}
+.core .fsop.ok .fss{color:var(--core-ok)}
+.core .fsop.err .fss{color:var(--core-bad)}
+.core .fsop.no>summary>code,.core .fsop.undone>summary>code{color:var(--core-text-3);text-decoration:line-through;text-decoration-thickness:1px}
+/* ждёт разрешения — статус «внимание»; удаление — статус «опасно»; идёт — частица Ядра */
+.core .fsop.ask{background:var(--core-warn-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-warn) 46%,transparent)}
+.core .fsop.ask .fss{color:var(--core-warn)}
+.core .fsop.ask.agdanger{background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 46%,transparent)}
+.core .fsop.ask.agdanger .fss,.core .fsop.ask.agdanger>summary>svg{color:var(--core-bad)}
+.core .fsop.run .fss{display:inline-flex;align-items:center;gap:var(--core-s-15);color:var(--core-text)}
+.core .fsop.run .fss::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--core-point);box-shadow:0 0 8px var(--core-point)}
+.core .fsdiff{margin:0;padding:var(--core-s-15) 0;overflow:auto;border-top:1px solid var(--core-line);background:var(--work-well);color:var(--core-text-2);font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-ligatures:none}
+.core .fsop>:last-child:is(.fsdiff,.agpre){border-radius:0 0 var(--core-r-sm) var(--core-r-sm)}
+.core .dl{display:grid;grid-template-columns:3ch minmax(0,1fr);padding:0 var(--core-s-3) 0 var(--core-s-1)}
+.core .dl i{color:var(--core-text-3);font-style:normal;text-align:center;-webkit-user-select:none;user-select:none}
+.core .dl span{white-space:pre-wrap;overflow-wrap:anywhere}
+.core .dl.add{background:var(--core-ok-soft);color:var(--core-ok)}
+.core .dl.add i{color:var(--core-ok)}
+.core .dl.del{background:var(--core-bad-soft);color:var(--core-bad)}
+.core .dl.del i{color:var(--core-bad)}
+.core .dl.gap{color:var(--core-text-3)}
+.core .fsnote{padding:var(--core-s-2) var(--core-s-3);border-top:1px solid var(--core-line);color:var(--core-text-2);font:var(--core-machine-1);font-weight:var(--core-w-1);overflow-wrap:anywhere}
+.core .fsnote.err{color:var(--core-bad)}
+.core .agpre{max-height:20rem;margin:0;padding:var(--core-s-2) var(--core-s-3);overflow:auto;border-top:1px solid var(--core-line);background:var(--work-well);color:var(--core-text);font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-ligatures:none;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2;cursor:var(--core-cursor-text)}
+.core .agpre.agout{color:var(--core-text-2)}
+.core .agpre.agout.err{color:var(--core-bad)}
+.core .fsbtns{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--core-s-2);padding:var(--core-s-2) var(--core-s-3) var(--core-s-3);border-top:1px solid var(--core-line)}
+.core .agwarn{margin:0;padding:var(--core-s-2) var(--core-s-3);border-radius:var(--core-r-sm);background:var(--core-warn-soft);color:var(--core-text);font:var(--core-human-1)}
+.core .fsop .agwarn{border-top:1px solid var(--core-line);border-radius:0;background:none;color:var(--core-text)}
+.core .step.clsite{align-items:center;gap:var(--core-s-2);padding:var(--core-s-1) 0}
+.core .step.clsite>svg{margin-top:0}
+.core .step.clsite>span{flex:1 1 auto}
+.core .step.clsite code{padding:0;background:none;color:var(--core-text);font:inherit}
+
+/* --- запуски кода: что выполнено, чем кончилось, что вывело --- */
+.core .runs{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--core-s-15);margin:0 0 var(--core-s-3)}
+.core .run{border-radius:var(--core-r-sm);background:var(--work-plate);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .run>summary{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:inherit;color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none}
+.core .run>summary>svg{flex:none;width:14px;height:14px;color:var(--core-text-3);stroke-width:1.6}
+.core .run>summary>b{color:var(--core-text);font-weight:var(--core-w-2)}
+.core .run>summary>span{color:var(--core-ok)}
+.core .run>summary>span.bad{color:var(--core-bad)}
+.core .run>.pre{margin:0;border-radius:0 0 var(--core-r-sm) var(--core-r-sm);box-shadow:none;border-top:1px solid var(--core-line)}
+.core .outp{max-height:20rem;margin:0;padding:var(--core-s-2) var(--core-s-4) var(--core-s-3);overflow:auto;border-top:1px solid var(--core-line);color:var(--core-text-2);font:var(--core-machine-2);font-variant-ligatures:none;white-space:pre-wrap;overflow-wrap:anywhere;cursor:var(--core-cursor-text)}
+.core .outp.err{color:var(--core-bad)}
+
+/* --- проверка результата (предпросмотр не прошёл проверку) --- */
+.core .validation-box{margin:var(--core-s-2) 0 var(--core-s-3);border-radius:var(--core-r-sm);background:var(--work-plate);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text-2);font:var(--core-human-1)}
+.core .validation-box>summary{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:inherit;color:var(--core-text);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.core .validation-box>summary::before{content:"";flex:none;width:6px;height:6px;margin:0 var(--core-s-1);border-radius:50%;background:var(--core-warn)}
+.core .validation-box[data-vs=passed]>summary::before{background:var(--core-ok)}
+.core .validation-box[data-vs=failed]>summary::before{background:var(--core-bad)}
+.core .validation-box[data-vs=failed]{background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 42%,transparent)}
+.core .validation-box[data-vs=unverified]{background:var(--core-warn-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-warn) 42%,transparent)}
+.core .validation-box ul{margin:0;padding:var(--core-s-1) var(--core-s-3) var(--core-s-2);border-top:1px solid var(--core-line);list-style:none;font:var(--core-machine-1);font-weight:var(--core-w-1)}
+.core .validation-box li{padding:var(--core-s-1) 0;color:var(--core-text)}
+.core .validation-box li small{display:block;padding-left:2ch;color:var(--core-text-3);font:var(--core-human-1)}
+.core .validation-box>small{display:block;padding:0 var(--core-s-3) var(--core-s-3);color:var(--core-text-3);font:var(--core-human-1)}
+
+/* ======================================================================================================
+   3. БЛОКИ КОДА — самое плотное стекло. Шапка машинным голосом: язык, число строк, «Скачать», «Копировать».
+      Блоки лежат на ровной сцене ленты, поэтому размытия у них нет: длинный код не тормозит вывод ответа.
+   ====================================================================================================== */
+/* У блока кода кромка — две тени (волосная линия и свет снизу), без слоя с маской: блок бывает в сотни строк
+   и перерисовывается на каждом кадре вывода ответа, маска на всю его высоту стоила бы кадров. */
+.core .pre{position:relative;margin:0 0 var(--core-s-4);overflow:hidden;border-radius:var(--core-r-md);background:var(--work-well);box-shadow:inset 0 0 0 1px var(--core-line),inset 0 -1px 0 color-mix(in srgb,var(--core-edge) 18%,transparent);color:var(--core-text)}
+/* кромка карточек, освещённая снизу — Ядро в разговоре стоит у горизонта (тот же приём, что у пластины вопроса) */
+.core :is(.art,.pack,.gen)::after{content:"";position:absolute;inset:0;z-index:1;padding:1px;border-radius:inherit;pointer-events:none;background:linear-gradient(to top,color-mix(in srgb,var(--core-edge) 24%,transparent),color-mix(in srgb,var(--core-edge) 6%,transparent) 70%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.core .pre .bar{display:flex;align-items:center;gap:var(--core-s-05);min-height:var(--core-h-md);padding:0 var(--core-s-1) 0 var(--core-s-4);border-bottom:1px solid var(--core-line);color:var(--core-text-3);font:var(--core-machine-1);font-variant-ligatures:none}
+.core .pre .bar>span:first-child{display:flex;align-items:baseline;min-width:0;margin-right:auto;overflow:hidden;color:var(--core-text-2);white-space:nowrap;text-overflow:ellipsis}
+.core .pre .bar>span:last-child:not(:first-child){display:flex;flex:none;gap:var(--core-s-05)}
+.core .pre .cu-n{margin:0;color:var(--core-text-3);font:inherit;font-weight:var(--core-w-1)}
+.core .pre .cu-n::before{content:"·";margin:0 var(--core-s-2)}
+.core .pre .bar button{flex:none;min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-2);border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core .pre .bar button:hover{background:var(--core-fill-2);color:var(--core-text)}}
+.core .pre .bar button[data-done]{color:var(--core-ok)}
+.core .pre pre{margin:0;padding:var(--core-s-3) var(--core-s-4);overflow:auto;background:none;color:inherit;font:var(--core-machine-2);font-variant-ligatures:none;white-space:pre;tab-size:2;-moz-tab-size:2;cursor:var(--core-cursor-text)}
+.core .pre code{padding:0;border:0;background:none;color:inherit;font:inherit;white-space:inherit}
+/* номера строк */
+.core .cv-code.cv-ln{counter-reset:cvl}
+.core .cv-code.cv-ln .cv-l{counter-increment:cvl}
+.core .cv-code.cv-ln .cv-l::before{content:counter(cvl);display:inline-block;min-width:3ch;margin-right:2ch;color:var(--core-text-3);font-variant-numeric:tabular-nums;text-align:right;opacity:.62;-webkit-user-select:none;user-select:none}
+/* длинный блок свёрнут до «показать все строки» */
+.core .pre.cu-long:not(.cu-open) pre{max-height:32.5rem;overflow:hidden;-webkit-mask-image:linear-gradient(#000 76%,transparent);mask-image:linear-gradient(#000 76%,transparent)}
+.core .cu-more{display:block;width:100%;min-height:var(--core-h-md);margin:0;padding:0 var(--core-s-4);border:0;border-top:1px solid var(--core-line);background:transparent;color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core .cu-more:hover{background:var(--core-fill-1);color:var(--core-text)}}
+
+/* палитра подсветки: шкала накала и нейтральные. Чем «горячее» слово, тем оно важнее для строения кода:
+   имена функций — белое каление, ключевые слова — свечение, числа — янтарь, строки — уголь; комментарии и знаки — нейтральные */
+.core .cv-code :is(.hljs-comment,.hljs-quote){color:var(--core-syn-comment);font-style:italic}
+.core .cv-code :is(.hljs-meta,.hljs-doctag,.hljs-meta .hljs-keyword){color:var(--core-syn-meta)}
+.core .cv-code :is(.hljs-punctuation,.hljs-operator,.hljs-tag){color:var(--core-syn-punct)}
+.core .cv-code :is(.hljs-keyword,.hljs-selector-pseudo,.hljs-selector-attr){color:var(--core-syn-keyword)}
+.core .cv-code :is(.hljs-name,.hljs-selector-tag,.hljs-selector-id,.hljs-selector-class){color:var(--core-syn-tag)}
+.core .cv-code :is(.hljs-string,.hljs-regexp,.hljs-char,.hljs-subst .hljs-string){color:var(--core-syn-string)}
+.core .cv-code :is(.hljs-number,.hljs-literal,.hljs-symbol,.hljs-bullet,.hljs-link){color:var(--core-syn-number)}
+.core .cv-code :is(.hljs-title,.hljs-section){color:var(--core-syn-func);font-weight:var(--core-w-2)}
+.core .cv-code :is(.hljs-type,.hljs-built_in,.hljs-title.class_,.hljs-class .hljs-title){color:var(--core-syn-type);font-weight:inherit}
+.core .cv-code :is(.hljs-attr,.hljs-attribute,.hljs-property,.hljs-variable,.hljs-template-variable){color:var(--core-syn-attr)}
+.core .cv-code :is(.hljs-params,.hljs-subst){color:inherit}
+.core .cv-code .hljs-emphasis{font-style:italic}
+.core .cv-code .hljs-strong{font-weight:var(--core-w-3)}
+.core .cv-code .hljs-addition{background:var(--core-ok-soft);color:var(--core-ok)}
+.core .cv-code .hljs-deletion{background:var(--core-bad-soft);color:var(--core-bad)}
+
+/* файл проекта: строка «путь · строк», раскрывается в код */
+.core .fileb{margin:0 0 var(--core-s-15);border-radius:var(--core-r-sm);background:var(--work-plate);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .fileb>summary{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:inherit;color:var(--core-text-2)}
+.core .fileb>summary>svg{flex:none;width:14px;height:14px;color:var(--core-text-3);stroke-width:1.6}
+.core .fileb .fp{min-width:0;overflow:hidden;color:var(--core-text);font:var(--core-machine-2);font-variant-ligatures:none;white-space:nowrap;text-overflow:ellipsis}
+.core .fileb>summary>small{flex:none;color:var(--core-text-3);font:var(--core-machine-1);font-weight:var(--core-w-1)}
+.core .fileb>.pre{margin:0;border-radius:0 0 var(--core-r-sm) var(--core-r-sm);box-shadow:none;border-top:1px solid var(--core-line)}
+.core .md>.fileb:last-of-type,.core .md>.fileb+:not(.fileb){margin-top:var(--core-s-4)}
+.core .md>.fileb:last-of-type{margin-top:0;margin-bottom:var(--core-s-4)}
+
+/* ======================================================================================================
+   4. КАРТОЧКИ РЕЗУЛЬТАТОВ И МЕДИА — то, что машина отдаёт: сайт, файл, архив, картинка, видео.
+   ====================================================================================================== */
+.core .art{position:relative;display:flex;align-items:center;gap:var(--core-s-3);width:100%;max-width:30rem;margin:0 0 var(--core-s-4);padding:var(--core-s-2) var(--core-s-3) var(--core-s-2) var(--core-s-2);border:0;border-radius:var(--core-r-md);background:var(--work-plate);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text);text-align:left;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,transform var(--core-dur-1) var(--core-ease-out)}
+@media (hover:hover){.core .art:hover{background:color-mix(in srgb,var(--core-edge) 10%,var(--core-scene))}}
+.core .art:active{transform:scale(.995)}
+.core .art-ic{position:relative;display:grid;place-items:center;flex:none;width:var(--core-h-lg);height:var(--core-h-lg);border-radius:var(--core-r-sm);background:var(--core-fill-2);color:var(--core-text-2)}
+.core .art-ic svg{width:var(--core-icon-lg);height:var(--core-icon-lg);stroke-width:1.5}
+.core .art-t{display:grid;flex:1 1 0;gap:1px;min-width:0}
+.core .art-t b{overflow:hidden;color:var(--core-text);font:var(--core-human-2);font-weight:var(--core-w-3);white-space:nowrap;text-overflow:ellipsis}
+.core .art-t small{overflow:hidden;color:var(--core-text-3);font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-ligatures:none;white-space:nowrap;text-overflow:ellipsis}
+.core .art-go{display:inline-flex;align-items:center;flex:none;gap:var(--core-s-15);min-height:var(--core-h-sm);padding:0 var(--core-s-3);border-radius:var(--core-r-sm);background:var(--core-fill-2);color:var(--core-text);font:var(--core-human-1);font-weight:var(--core-w-2)}
+/* открыта в окне результата: «включено — свет» */
+.core .art.cur{background:color-mix(in srgb,var(--core-edge) 10%,var(--core-scene))}
+.core .art.cur .art-ic{background:var(--core-fill-3);color:var(--core-text)}
+.core .art.cur .art-go{background:transparent;box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text-2)}
+.core .art.cur .art-go::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--core-on)}
+/* создаётся: машина работает — у значка дышит частица Ядра */
+.core :is(.art,.pack).building .art-ic svg{opacity:.4}
+.core :is(.art,.pack).building .art-ic::after{content:"";position:absolute;right:-2px;bottom:-2px;width:8px;height:8px;border-radius:50%;background:var(--core-point);box-shadow:0 0 0 2px var(--core-scene),0 0 10px var(--core-point)}
+.core :is(.art,.pack).building .art-t small{color:var(--core-text-2)}
+.core .art+.art-mp4{margin:calc(var(--core-s-2) * -1) 0 var(--core-s-4)}
+
+.core .pack{position:relative;max-width:30rem;margin:0 0 var(--core-s-4);border-radius:var(--core-r-md);background:var(--work-plate);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .pack-h{display:flex;align-items:center;gap:var(--core-s-3);padding:var(--core-s-2) var(--core-s-3) var(--core-s-2) var(--core-s-2)}
+.core .pack-b{display:flex;flex-wrap:wrap;gap:var(--core-s-2);padding:var(--core-s-2);border-top:1px solid var(--core-line)}
+
+/* файлы и картинки, которые сделал код или облачный компьютер */
+.core .outs{display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--core-s-2);margin:var(--core-s-3) 0 0}
+.core .ofile{display:flex;align-items:center;gap:var(--core-s-3);min-width:0;max-width:100%;padding:var(--core-s-15) var(--core-s-3) var(--core-s-15) var(--core-s-15);border-radius:var(--core-r-sm);background:var(--work-plate);box-shadow:inset 0 0 0 1px var(--core-line);color:var(--core-text);text-decoration:none;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .ofile:hover{background:color-mix(in srgb,var(--core-edge) 10%,var(--core-scene))}}
+.core .ofile .art-ic{width:var(--core-h-md);height:var(--core-h-md);border-radius:calc(var(--core-r-sm) - 2px)}
+.core .ofile .art-ic svg{width:var(--core-icon);height:var(--core-icon)}
+.core .ofile b{display:block;overflow:hidden;color:var(--core-text);font:var(--core-machine-2);font-weight:var(--core-w-2);font-variant-ligatures:none;white-space:nowrap;text-overflow:ellipsis}
+.core .ofile small{display:block;overflow:hidden;color:var(--core-text-3);font:var(--core-machine-1);font-weight:var(--core-w-1);white-space:nowrap;text-overflow:ellipsis}
+.core .ofile:not(:has(.art-ic)){display:block;padding:var(--core-s-2) var(--core-s-3)}
+.core .imgw{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--core-s-1);max-width:min(26rem,100%)}
+.core .imgw img{display:block;max-width:100%;height:auto;border-radius:var(--core-r-sm);box-shadow:0 0 0 1px var(--core-line);cursor:zoom-in}
+.core .imgw a{justify-self:start;color:var(--core-text-3);font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-ligatures:none;text-decoration:none;overflow-wrap:anywhere;cursor:var(--core-cursor-action);transition:color var(--core-dur-1) linear}
+@media (hover:hover){.core .imgw a:hover{color:var(--core-text)}}
+.core .outs audio{flex:0 0 100%;width:100%;max-width:min(32.5rem,100%);height:var(--core-h-lg)}
+.core .outs .gen.vid{flex:0 0 100%;width:100%;max-width:min(32.5rem,100%)}
+.core .cfs-more,.core .outs-keep{flex:0 0 100%;margin:0;color:var(--core-text-3);font:var(--core-human-1)}
+.core .outs-keep{margin:var(--core-s-2) 0 0}
+.core .outs.cfs>.btn+.cfs-more{flex:1 1 12rem;align-self:center}
+
+/* нарисованные картинки и видео */
+.core .gens{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--core-s-2);max-width:min(32.5rem,100%);margin:var(--core-s-3) 0 0}
+.core .gens.multi{grid-template-columns:minmax(0,1fr) minmax(0,1fr);max-width:min(42rem,100%)}
+.core .gen{position:relative;margin:0;overflow:hidden;border-radius:var(--core-r-md);background:var(--work-well)}
+.core .gen img{display:block;width:100%;height:auto;cursor:zoom-in}
+.core .gen.vid video{display:block;width:100%;height:auto;background:var(--core-solid-dense)}
+.core .gen-dl{position:absolute;z-index:2;top:var(--core-s-2);right:var(--core-s-2);display:grid;place-items:center;width:var(--core-h-md);height:var(--core-h-md);border-radius:var(--core-r-sm);background:var(--core-solid-near);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text);opacity:0;cursor:var(--core-cursor-action);transition:opacity var(--core-dur-2) linear,background-color var(--core-dur-1) linear}
+.core .gen-dl svg{width:var(--core-icon);height:var(--core-icon)}
+.core .gen:hover .gen-dl,.core .gen-dl:focus-visible{opacity:1}
+@media (hover:none){.core .gen-dl{opacity:1}}
+/* картинка или видео готовится: точки собираются в её очертания, под ними — что делает машина и сколько уже */
+.core .gen.draw{display:grid;aspect-ratio:1;isolation:isolate}
+.core .gen.draw.v{aspect-ratio:16/9}
+.core .gen.draw .core-gather{position:absolute;inset:var(--core-s-3);display:block}
+.core .gen.draw .core-gather__block{width:100%;height:100%;border-radius:calc(var(--core-r-md) - var(--core-s-3) + 4px)}
+.core .gen.draw figcaption{position:absolute;z-index:2;left:var(--core-s-2);right:var(--core-s-2);bottom:var(--core-s-2);display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-1) var(--core-s-2);padding:var(--core-s-2) var(--core-s-3);border-radius:var(--core-r-sm);background:var(--core-solid-near);box-shadow:inset 0 0 0 1px var(--core-line-2)}
+.core .gen.draw figcaption b{display:inline-flex;align-items:center;gap:var(--core-s-2);color:var(--core-text);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.core .gen.draw figcaption b::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--core-point);box-shadow:0 0 8px var(--core-point)}
+.core .gen.draw figcaption span{margin-left:auto;color:var(--core-text-2);font:var(--core-machine-1);font-variant-numeric:tabular-nums}
+.core .gen.draw .dbar{flex:0 0 100%;height:2px;overflow:hidden;border-radius:1px;background:var(--core-line)}
+.core .gen.draw .dbar i{display:block;height:100%;border-radius:inherit;background:var(--core-point);transition:width var(--core-dur-4) var(--core-ease-move)}
+.core .gen.draw small{flex:0 0 100%;color:var(--core-text-3);font:var(--core-human-1)}
+
+/* ======================================================================================================
+   5. ОБЛАЧНЫЙ КОМПЬЮТЕР, ПАПКА, ПОМОЩНИК — рабочее место машины. Терминал — самый чистый машинный голос:
+      плотное стекло, палитра --core-term-* из токенов (см. core-tokens.css), курсор — частица Ядра.
+   ====================================================================================================== */
+/* окна режимов «Папка» и «Компьютер» у поля ввода: ближнее стекло (классы стекла им даёт скрипт) */
+.core .fsmenu{position:absolute;left:0;bottom:calc(100% + var(--core-s-3));z-index:30;display:grid;gap:var(--core-s-05);width:min(20rem,calc(100vw - var(--core-s-8)));padding:var(--core-s-15);border-radius:var(--core-r-md);color:var(--core-text);font:var(--core-human-2);text-align:left}
+.core .fsm-h{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-sm);padding:0 var(--core-s-2);color:var(--core-text-3);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.core .fsm-h svg{flex:none;width:var(--core-icon);height:var(--core-icon)}
+.core .fsm-h b{overflow:hidden;font-weight:inherit;white-space:nowrap;text-overflow:ellipsis}
+.core .agm-sub{padding:0 var(--core-s-2) var(--core-s-1);color:var(--core-text-3);font:var(--core-machine-1);font-weight:var(--core-w-1)}
+.core .fsmenu button{display:block;width:100%;min-height:var(--core-h-md);margin:0;padding:var(--core-s-15) var(--core-s-2);border:0;border-radius:var(--core-r-sm);background:transparent;color:var(--core-text);font:var(--core-human-2);text-align:left;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .fsmenu button:hover,.core .fsm-ck:hover{background:var(--core-fill-1)}}
+.core .fsmenu button:active{background:var(--core-fill-2)}
+.core .fsmenu .danger{color:var(--core-bad)}
+.core .fsmenu .agpick{position:relative;display:grid;gap:1px;padding-right:var(--core-s-8)}
+.core .agpick b{font-weight:var(--core-w-2)}
+.core .agpick small{color:var(--core-text-3);font:var(--core-machine-1);font-weight:var(--core-w-1)}
+.core .agpick.on{background:var(--core-fill-2)}
+.core .agpick.on::after{content:"";position:absolute;right:var(--core-s-2);top:50%;width:var(--core-icon);height:var(--core-icon);margin-top:-8px;background:var(--core-on);-webkit-mask:var(--core-glyph-check) center/contain no-repeat;mask:var(--core-glyph-check) center/contain no-repeat}
+.core .fsm-ck{display:flex;align-items:flex-start;gap:var(--core-s-2);padding:var(--core-s-2);border-radius:var(--core-r-sm);color:var(--core-text-2);font:var(--core-human-1);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear}
+.core .fsm-ck input{flex:none;width:var(--core-icon);height:var(--core-icon);margin:0;accent-color:var(--core-on);cursor:inherit}
+.core .fsm-ck em{color:var(--core-bad);font-style:normal}
+.core .fsm-h~.fsm-ck:first-of-type,.core .agpick~.fsm-ck:first-of-type{margin-top:var(--core-s-05)}
+
+/* --- окно «Облачный компьютер» (содержимое; сама рама окна — шаг 5) --- */
+.core .clw{display:flex;flex-direction:column;gap:var(--core-s-3);min-width:0;color:var(--core-text);font:var(--core-human-2)}
+.core .clw .sp{flex:1}
+/* состояние машины: работает — статус «в порядке», спит — пустая точка, сбой — статус ошибки */
+.core .clbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-sm)}
+.core .clst{min-width:0;color:var(--core-text);font:var(--core-machine-2);font-variant-ligatures:none}
+.core .clst .dim{font-variant-numeric:tabular-nums}
+.core .clst.bad{color:var(--core-bad)}
+.core .cldot{display:inline-block;width:8px;height:8px;margin:0 var(--core-s-2) 1px 0;vertical-align:middle;border-radius:50%;background:transparent;box-shadow:inset 0 0 0 1.5px var(--core-text-3)}
+.core .cldot.on{background:var(--core-ok);box-shadow:0 0 8px color-mix(in srgb,var(--core-ok) 60%,transparent)}
+.core .agtabs{display:flex;align-self:flex-start;gap:var(--core-s-05);height:var(--core-h-md);padding:var(--core-s-05);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .agtabs button{height:100%;margin:0;padding:0 var(--core-s-3);border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-2);font:var(--core-human-2);font-weight:var(--core-w-2);white-space:nowrap;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core .agtabs button:hover{color:var(--core-text)}}
+.core .agtabs button.on{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text)}
+
+/* терминал: окно в рабочее место Ядра. Свет приходит снизу, как на всём экране разговора. */
+.core .clxt,.core .agpre.clout{position:relative;height:min(52vh,28.75rem);max-height:none;margin:0;padding:var(--core-s-3) var(--core-s-2) var(--core-s-2) var(--core-s-4);overflow:hidden;border:0;border-radius:var(--core-r-md);background:var(--core-term-bg);box-shadow:inset 0 0 0 1px var(--core-line),inset 0 -28px 44px -32px color-mix(in srgb,var(--core-edge) 26%,transparent);color:var(--core-term-fg)}
+.core .clxt .xterm{height:100%}
+.core .clxt .xterm-viewport{background-color:transparent!important;scrollbar-width:thin;scrollbar-color:var(--core-scroll) transparent}
+.core .agpre.clout{padding-right:var(--core-s-4);overflow:auto;font:var(--core-machine-2);font-variant-ligatures:none;white-space:pre-wrap;overflow-wrap:anywhere}
+.core .clout .dim{color:var(--core-term-dim)}
+.core .clcmd{margin-top:var(--core-s-3);color:var(--core-term-fg);font-weight:var(--core-w-2)}
+.core .clcmd:first-child{margin-top:0}
+.core .clerr{color:var(--core-term-red)}
+.core .clin{display:flex;align-items:center;gap:var(--core-s-2);margin-top:var(--core-s-2);padding:var(--core-s-05) var(--core-s-05) var(--core-s-05) var(--core-s-3);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-line-2);transition:box-shadow var(--core-dur-1) linear}
+.core .clin:focus-within{box-shadow:inset 0 0 0 1px var(--core-focus),0 0 0 3px color-mix(in srgb,var(--core-focus) 16%,transparent)}
+.core .clin code{flex:none;max-width:30%;overflow:hidden;padding:0;background:none;color:var(--core-text-3);font:var(--core-machine-2);font-variant-ligatures:none;white-space:nowrap;text-overflow:ellipsis}
+.core .clin input{flex:1 1 auto;min-width:0;height:var(--core-h-sm);margin:0;padding:0;border:0;outline:0;background:none;color:var(--core-text);font:var(--core-machine-2);font-variant-ligatures:none;caret-color:var(--core-caret)}
+
+/* файлы и сайты: списки машинным голосом */
+.core .clsec{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--core-s-2);margin:var(--core-s-1) 0 var(--core-s-2)}
+.core .clsec b{color:var(--core-text);font:var(--core-human-2);font-weight:var(--core-w-3)}
+.core .clsec .dim{font:var(--core-human-1)}
+.core .clpath{display:flex;align-items:center;gap:var(--core-s-2);margin:0 0 var(--core-s-2)}
+.core .clcrumbs{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-05);min-width:0;font:var(--core-machine-2);font-variant-ligatures:none}
+.core .clcrumbs button{min-height:var(--core-h-sm);margin:0;padding:0 var(--core-s-15);border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text);font:inherit;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .clcrumbs button:hover{background:var(--core-fill-2)}}
+.core .cltr{padding:0 var(--core-s-15);font-weight:var(--core-w-2)}
+.core .clup{cursor:var(--core-cursor-action)}
+.core .cllist{max-height:min(50vh,27.5rem);overflow:auto;border-radius:var(--core-r-md);background:var(--work-well);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .clrow{display:grid;grid-template-columns:var(--core-icon) minmax(0,1fr) auto var(--core-h-md);align-items:center;gap:var(--core-s-3);min-height:var(--core-h-lg);padding:0 var(--core-s-1) 0 var(--core-s-4);border-bottom:1px solid var(--core-line);font:var(--core-machine-2);font-variant-ligatures:none}
+.core .clrow:last-child{border-bottom:0}
+.core .clrow>svg{width:var(--core-icon);height:var(--core-icon);color:var(--core-text-3)}
+.core .clnm{min-width:0;margin:0;padding:var(--core-s-2) 0;overflow:hidden;border:0;background:none;color:var(--core-text);font:inherit;text-align:left;text-decoration:none;white-space:nowrap;text-overflow:ellipsis;cursor:var(--core-cursor-action)}
+@media (hover:hover){.core :is(button,a).clnm:hover{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em}}
+.core .clnm small{display:block;overflow:hidden;color:var(--core-text-3);font:var(--core-machine-1);font-weight:var(--core-w-1);text-overflow:ellipsis}
+.core .clrow>.dim{font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.core .clacts{display:flex;align-items:center;gap:var(--core-s-1)}
+.core .clrow .ib svg{width:var(--core-icon);height:var(--core-icon)}
+.core .clzip[data-busy]{opacity:.5;pointer-events:none}
+.core .clempty{padding:var(--core-s-4);font:var(--core-human-1)}
+.core .clempty code{padding:1px var(--core-s-1);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);color:var(--core-text);font:var(--core-machine-1);font-weight:var(--core-w-1)}
+.core .clinl{width:14px;height:14px;vertical-align:-2px}
+.core .clhint{min-height:var(--core-h-md);font:var(--core-human-1)}
+.core .clnote,.core .agl{margin:0;color:var(--core-text-2);font:var(--core-human-1)}
+.core .clnote.dim,.core .agl.dim{color:var(--core-text-3)}
+.core .cllist>.agwarn{margin:var(--core-s-2)}
+
+/* --- окно «Доступ к компьютеру» (содержимое) --- */
+.core .agset{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--core-s-3);color:var(--core-text);font:var(--core-human-2)}
+.core .agset .agl{font:var(--core-human-2)}
+.core .agset .agl.dim{font:var(--core-human-1)}
+.core .agset .agl b{color:var(--core-text);font-weight:var(--core-w-3)}
+.core .agol{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--core-s-3);margin:0;padding:0 0 0 var(--core-s-6);color:var(--core-text-2);font:var(--core-human-2)}
+.core .agol li::marker{color:var(--core-text-3);font:var(--core-machine-1)}
+.core .agol a:not(.btn){color:var(--core-text);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;text-decoration-color:var(--core-text-3)}
+.core .agdl{margin:0 var(--core-s-1) var(--core-s-1) 0;vertical-align:middle}
+.core .agsm{margin-top:var(--core-s-15);font:var(--core-human-1)}
+.core .agcode{display:inline-block;padding:var(--core-s-05) var(--core-s-2);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);color:var(--core-text);font:var(--core-machine-3);font-variant-ligatures:none;letter-spacing:.12em}
+.core .agcmd{display:flex;align-items:center;gap:var(--core-s-1);margin-top:var(--core-s-15);padding:var(--core-s-05) var(--core-s-05) var(--core-s-05) var(--core-s-3);border-radius:var(--core-r-sm);background:var(--work-well);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core .agcmd code{flex:1 1 auto;min-width:0;padding:var(--core-s-15) 0;overflow:auto;background:none;color:var(--core-text);font:var(--core-machine-1);font-weight:var(--core-w-1);font-variant-ligatures:none;white-space:nowrap}
+.core .agwait{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-sm);color:var(--core-text-2);font:var(--core-machine-1);font-weight:var(--core-w-1)}
+.core .agspin{flex:none;width:6px;height:6px;border:0;border-radius:50%;background:var(--core-point);box-shadow:0 0 8px var(--core-point)}
+
+/* ======================================================================================================
+   6. ТЕЛЕФОН (до 860 px): результат занимает весь экран; сверху — переключатель «чат / результат» и публикация,
+      под ними виды, инструменты — внизу под большим пальцем.
+   ====================================================================================================== */
+@media (max-width:860px){
+  .core .pane{position:fixed;inset:0;z-index:40;width:100%;transition:visibility 0s var(--core-dur-2)}
+  .core .pane.on{width:100%}
+  .core .pane-grip{display:none}
+  .core .pane-in{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;gap:0 var(--core-s-2);width:100%;height:100%;margin:0;border-radius:0;--_fill:var(--core-solid-mid);-webkit-backdrop-filter:none;backdrop-filter:none;
+    padding:max(var(--core-s-2),env(safe-area-inset-top,0px)) max(var(--core-s-2),env(safe-area-inset-right,0px)) max(var(--core-s-2),env(safe-area-inset-bottom)) max(var(--core-s-2),env(safe-area-inset-left,0px));
+    transform:translateY(24px) scale(.98);transform-origin:50% 100%}
+  .core .pane-in::after{content:none}
+  .core .phead{display:contents}
+  .core .phead::after{content:none}
+  .core .ph-id{grid-column:1;grid-row:1;order:0;min-height:var(--core-hit);margin:0 0 var(--core-s-2);padding-left:var(--core-s-2)}
+  .core .pane.has-sw .ph-id{position:absolute;width:1px;height:1px;min-height:0;overflow:hidden;clip-path:inset(50%)}
+  .core .pane .view-sw{grid-column:1/-1;grid-row:1;margin:0 0 var(--core-s-2)}
+  /* без переключателя (скрипт не загрузился) закрыть окно можно крестиком, как раньше */
+  .core #pClose{grid-column:2;grid-row:1;order:0;margin:0 0 var(--core-s-2)}
+  .core .pane.has-sw #pClose{display:none}
+  .core .tabs{grid-column:1/-1;grid-row:2;order:0;height:calc(var(--core-hit) + var(--core-s-05) * 2);margin:0 0 var(--core-s-2)}
+  .core .tabs button{flex:1 1 0}
+  .core .pubbar{grid-column:1/-1}
+  .core #pubbar{grid-row:3}
+  .core #animbar{grid-row:4}
+  .core .pbody{grid-column:1/-1;grid-row:5}
+  /* внизу, под большим пальцем: слева тихие инструменты, справа главное действие */
+  .core .ph-tools{grid-column:1;grid-row:6;order:0;justify-content:space-between;max-width:20rem;margin:var(--core-s-2) 0 0}
+  .core .ph-pub{grid-column:2;grid-row:6;order:0;align-self:center;margin:var(--core-s-2) 0 0}
+  .core .pwait .core-gather{width:min(26rem,70vw)}
+  .core .version-panel{padding:var(--core-s-4)}
+  .core .version-row{grid-template-columns:minmax(0,1fr) auto}
+  .core .version-row .core-btn{grid-row:auto}
+  .core .version-row b,.core .version-row small{grid-column:1/-1;grid-row:auto}
+
+  /* переключатель: слева чат, справа результат; подписи — название чата и название результата */
+  .core .view-sw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--core-s-05);min-width:0;max-width:100%;height:calc(var(--core-hit) + var(--core-s-05) * 2);padding:var(--core-s-05);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-line)}
+  .core .view-sw[hidden]{display:none}
+  .core .view-sw button{display:flex;align-items:center;justify-content:center;gap:var(--core-s-15);min-width:0;height:100%;margin:0;padding:0 var(--core-s-3);border:0;border-radius:calc(var(--core-r-sm) - 2px);background:transparent;color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+  .core .view-sw button svg{flex:none;width:var(--core-icon);height:var(--core-icon)}
+  .core .view-sw button span{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .core .view-sw button[aria-pressed=true]{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text)}
+  .core .top .view-sw{flex:0 1 auto;margin:0 var(--core-s-2) 0 0}
+  .core .top.has-sw .crumb{display:none}
+
+  .core .art,.core .pack{max-width:none}
+  .core .gens.multi{grid-template-columns:minmax(0,1fr)}
+  .core .wl-ic{display:none}
+  .core .wl>summary::after{margin-left:auto}
+  .core .fsbtns .btn{flex:1 1 auto}
+  .core .clxt,.core .agpre.clout{height:44vh}
+  .core .clin{flex-wrap:wrap}
+  .core .clin code{max-width:100%}
+  .core .clin input{flex-basis:8rem}
+  .core .clrow{gap:var(--core-s-2);padding-left:var(--core-s-3)}
+}
+/* под палец: главное действие окна — полная цель; поля ввода — 16 px, чтобы iOS не увеличивал страницу */
+@media (pointer:coarse),(max-width:600px){
+  .core .ph-pub{--_h:var(--core-hit);padding:0 var(--core-s-4) 0 var(--core-s-3)}
+  .core .ph-pub.on{width:var(--core-hit);padding:0}
+  .core .clin input{font:var(--core-machine-3)}
+}
+
+/* ======================================================================================================
+   7. ДВИЖЕНИЕ. Циклы — только у «машина работает»; при «уменьшить движение» их нет, состояние читается без них.
+   ====================================================================================================== */
+@keyframes work-in{from{opacity:0;transform:translateY(4px)}}
+@keyframes work-menu{from{opacity:0;transform:translateY(6px) scale(.98)}}
+@media (prefers-reduced-motion:no-preference){
+  .core:not([data-core-motion=reduce]) :is(.wl.on .wl-st::before,.step.on>svg,.think.on>summary>svg,.fsop.run .fss::before,.building .art-ic::after,.gen.draw figcaption b::before,.agspin){animation:core-breathe var(--chat-breathe) ease-in-out infinite alternate}
+  .core:not([data-core-motion=reduce]) .wl[open]>.wl-b{animation:work-in var(--core-dur-2) var(--core-ease-out) both}
+  .core:not([data-core-motion=reduce]) .fsmenu{animation:work-menu var(--core-dur-2) var(--core-ease-out) both;transform-origin:0 100%}
+}
+.core[data-core-motion=reduce] .pane-in{transform:none}
+@media (prefers-reduced-motion:reduce){.core .pane-in{transform:none}}
+
+/* высокий контраст: у каждой поверхности — системный контур */
+@media (forced-colors:active){
+  .core :is(.pre,.art,.pack,.ofile,.fsop,.run,.fileb,.validation-box,.pbody,.pubbar,.tabs,.agtabs,.cllist,.clxt,.clin,.gen){outline:1px solid CanvasText}
+  .core .tabs button.on,.core .agtabs button.on,.core .view-sw button[aria-pressed=true]{outline:2px solid Highlight;outline-offset:-2px}
+}

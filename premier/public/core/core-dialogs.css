@@ -1,0 +1,681 @@
+/* Premier · Core — окна и малые элементы чата (редизайн, шаг 5). Описание: /CORE-DESIGN-SYSTEM.md, раздел 15.
+   Все окна чата — одна семья: одна оболочка (#modal и #ulWin — core-dialog), одни поля и заголовки, один порядок
+   кнопок, одно движение. Здесь же меню моделей, карточки-приглашения, объявление, состояния загрузки и ошибок.
+   Подключается после core-work.css. Опирается на существующие id и классы разметки: скрипты public/js на них
+   завязаны, поэтому меняется только вид. Все значения — из токенов --core-*.
+   Общие элементы заданы с низкой специфичностью (:where), чтобы семейные правила ниже и части шага 4
+   (.msg, .pane, .clw, .agset задают свою .btn целиком) их перекрывали без !important.
+   Янтарь — только у одного главного действия окна и там, где работает ИИ; список селекторов проверяет тест. */
+
+.core{
+  --dlg-gap:var(--core-s-4);                          /* шаг между блоками окна */
+  --dlg-plate:var(--core-fill-1);                     /* плита внутри окна: карточка, строка, сводка — без размытия */
+  --dlg-edge:inset 0 0 0 1px var(--core-line);        /* грань плиты */
+  --dlg-edge-2:inset 0 0 0 1px var(--core-line-2);    /* грань плиты, которая нажимается или выбрана */
+  --dlg-kb:0px;                                       /* высота экранной клавиатуры (пишет 25-core-dialogs.js) */
+}
+
+/* ---------- 0. Основа страницы. Раньше приходила из моста chat-legacy.css; чату мост больше не нужен ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+button,input,textarea,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:var(--core-cursor-action)}
+svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:860px){textarea,input,select{font-size:16px}}   /* меньше 16 px — iOS приближает страницу при фокусе */
+.core #ptag{padding:0 var(--core-s-15)}   /* метка проекта в строке поля: отступ раньше давал мост */
+.core .p-sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+/* ======================================================================================================
+   1. ОБОЛОЧКА ОКНА — одна стеклянная плита средней глубины. Рождение, фон и лист на телефоне — в core-components.css
+   ====================================================================================================== */
+.core .modal .dlg{width:min(520px,100%);transition:width var(--core-dur-3) var(--core-ease-move)}
+.core .modal .dlg.wide{width:min(880px,100%)}
+.core .modal .dlg.accdlg{width:min(760px,100%)}
+.core :is(.dhead,.ulw-head) :is(h2,.core-dialog__title){min-width:0;overflow-wrap:anywhere;text-wrap:balance}
+.core .dhead{align-items:flex-start}
+.core .dhead .core-dialog__title{padding-top:var(--core-s-1)}
+.core :is(.dbody,.ulw-body){font:var(--core-human-2);color:var(--core-text-2)}
+.core :is(.dbody,.ulw-body) :is(b,strong){font-weight:var(--core-w-2);color:var(--core-text)}
+.core :is(.dbody,.ulw-body) a:not(.btn){color:var(--core-text);text-decoration:underline;text-decoration-color:var(--core-text-3);text-underline-offset:3px;cursor:var(--core-cursor-action)}
+@media (hover:hover){.core :is(.dbody,.ulw-body) a:not(.btn):hover{text-decoration-color:var(--core-text)}}
+/* смена раздела или окна в той же плите: спокойный поворот грани, а плита плавно принимает новую высоту (25-core-dialogs.js) */
+.core .dlg[data-face] :is(.dbody,.ulw-body),.core .acc-body[data-face]{animation:dlg-face var(--core-dur-3) var(--core-ease-out) both}
+.core .dlg[data-face=prev] :is(.dbody,.ulw-body),.core .acc-body[data-face=prev]{--_face:-1}
+@keyframes dlg-face{from{opacity:0;transform:perspective(1200px) translate3d(0,calc(var(--_face,1) * 10px),0) rotateX(calc(var(--_face,1) * -7deg))}to{opacity:1;transform:none}}
+
+/* ======================================================================================================
+   2. ОБЩИЕ ЭЛЕМЕНТЫ ОКОН
+   ====================================================================================================== */
+/* ---------- кнопка: тот же вид, что core-btn ---------- */
+.core :where(.btn,.tm-btn){
+  position:relative;display:inline-flex;align-items:center;justify-content:center;gap:var(--core-s-2);flex:none;width:auto;height:auto;min-height:var(--core-h-md);min-width:var(--core-h-md);margin:0;padding:0 var(--core-s-4);
+  border:0;border-radius:var(--core-r-sm);background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-line-2);color:var(--core-text);
+  font:var(--core-human-2);font-weight:var(--core-w-2);letter-spacing:0;text-align:center;text-decoration:none;white-space:nowrap;cursor:var(--core-cursor-action);-webkit-user-select:none;user-select:none;touch-action:manipulation;
+  transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,color var(--core-dur-1) linear,filter var(--core-dur-1) linear,opacity var(--core-dur-1) linear,transform var(--core-dur-1) var(--core-ease-out);
+}
+.core :where(.btn,.tm-btn) svg{width:var(--core-icon);height:var(--core-icon)}
+@media (hover:hover){.core :where(.btn,.tm-btn):where(:hover){background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.core :where(.btn,.tm-btn):where(:active){background:var(--core-fill-1);transform:scale(.98)}
+.core :where(.btn):where(.sm,.mini){min-height:var(--core-h-sm);min-width:var(--core-h-sm);padding:0 var(--core-s-3);font-size:var(--core-fs-1);line-height:var(--core-lh-1)}
+/* «главная» вне окон — светом, как в частях шага 4 */
+.core :where(.btn,.tm-btn):where(.pri){background:var(--core-on);box-shadow:none;color:var(--core-on-ink)}
+@media (hover:hover){.core :where(.btn,.tm-btn):where(.pri):where(:hover){background:color-mix(in srgb,var(--core-on) 86%,transparent);box-shadow:none}}
+/* главное действие окна — раскалённое, одно на окно (исключения, где .pri в окне несколько, сняты в семейных правилах) */
+.core :where(.modal,.ulw) :where(.btn,.tm-btn):where(.pri){
+  color:var(--core-text-on-heat);font-weight:var(--core-w-3);
+  background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-4),var(--core-heat-3) 70%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 38%,transparent),0 6px 22px -8px color-mix(in srgb,var(--core-heat-3) 70%,transparent);
+}
+@media (hover:hover){.core :where(.modal,.ulw) :where(.btn,.tm-btn):where(.pri):where(:hover){
+  background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-4),var(--core-heat-3) 70%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 64%,transparent),0 8px 28px -8px color-mix(in srgb,var(--core-heat-3) 92%,transparent);filter:brightness(1.09);
+}}
+.core :where(.modal,.ulw) :where(.btn,.tm-btn):where(.pri):where(:active){
+  background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-3),var(--core-heat-2) 78%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-4) 36%,transparent),0 3px 10px -6px color-mix(in srgb,var(--core-heat-3) 70%,transparent);filter:none;
+}
+@media (any-pointer:fine){.core :where(.modal,.ulw) :where(.btn,.tm-btn):where(.pri):where(:not(:disabled)),.core :where(.modal,.ulw) :where(.btn,.tm-btn):where(.pri):where(:not(:disabled)) *{cursor:var(--core-cursor-action-on-heat)}}
+/* опасная: цвет ошибки на тексте и тонкой грани, без сплошной заливки */
+.core :where(.btn):where(.danger,.dangerb,.bad){color:var(--core-bad);background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 34%,transparent)}
+.core :where(.btn):where(.dangerb.solid){box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 64%,transparent)}
+@media (hover:hover){.core :where(.btn):where(.danger,.dangerb,.bad):where(:hover){background:color-mix(in srgb,var(--core-bad) 22%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 56%,transparent)}}
+.core :where(.btn):where(.danger,.dangerb,.bad):where(:active){background:color-mix(in srgb,var(--core-bad) 10%,transparent)}
+/* выключено: главная остывает до стекла, остальные гаснут */
+.core :where(.btn,.tm-btn):disabled,.core :where(.btn,.tm-btn)[aria-disabled=true]{color:var(--core-text-3);font-weight:var(--core-w-2);background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line);filter:none;transform:none;opacity:.72;cursor:not-allowed}
+/* тихая текстовая кнопка: второстепенные действия внутри плит */
+.core :where(.gw-tr,.tm-link,.tm-rm,.api-ccopy,.ulw-back,.kn-del){display:inline-flex;align-items:center;gap:var(--core-s-1);min-height:var(--core-h-sm);padding:0 var(--core-s-2);border-radius:var(--core-r-sm);color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core :where(.gw-tr,.tm-link,.tm-rm,.api-ccopy,.ulw-back,.kn-del) svg{width:14px;height:14px}
+@media (hover:hover){.core :where(.gw-tr,.tm-link,.tm-rm,.api-ccopy,.ulw-back,.kn-del):hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core :where(.gw-tr,.tm-link,.tm-rm,.api-ccopy,.ulw-back,.kn-del):active{background:var(--core-fill-2)}
+
+/* ---------- поля ---------- */
+.core :where(.field){display:grid;gap:var(--core-s-15);min-width:0;margin:0 0 var(--dlg-gap)}
+.core :where(.field)>span{font:var(--core-human-2);font-weight:var(--core-w-2);color:var(--core-text)}
+.core :where(.field)>small{font:var(--core-human-1);color:var(--core-text-3)}
+.core :where(.field input,.field textarea,.field select,.promo input,.gw-sh input,.tm-inp,.tfa-form input){
+  display:block;width:100%;min-width:0;min-height:var(--core-h-md);margin:0;padding:0 var(--core-s-3);border:1px solid var(--core-line-2);border-radius:var(--core-r-sm);
+  background-color:var(--core-well);color:var(--core-text);font:var(--core-human-2);letter-spacing:0;outline:2px solid transparent;outline-offset:0;-webkit-appearance:none;appearance:none;
+  transition:border-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,background-color var(--core-dur-1) linear;
+}
+@media (hover:hover){.core :where(.field input,.field textarea,.field select,.promo input,.gw-sh input,.tm-inp,.tfa-form input):where(:hover){border-color:var(--core-text-3)}}
+.core :where(.field input,.field textarea,.field select,.promo input,.gw-sh input,.tm-inp,.tfa-form input):focus{border-color:var(--core-focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--core-focus) 18%,transparent);outline:2px solid transparent}
+.core :where(.field input,.field textarea,.field select,.promo input,.gw-sh input,.tm-inp,.tfa-form input):disabled{background-color:transparent;border-color:var(--core-line);color:var(--core-text-3);opacity:.72}
+.core :where(.field input,.gw-sh input)[readonly]{background-color:transparent}
+.core :where(.field) textarea{min-height:140px;max-height:340px;padding:var(--core-s-2) var(--core-s-3);resize:vertical;overflow:auto}
+.core :where(.field) select{padding-right:var(--core-s-8);background-image:var(--core-select-arrow);background-repeat:no-repeat;background-position:right var(--core-s-2) center;background-size:16px 16px;text-overflow:ellipsis}
+.core :where(.field) select option{background:var(--core-solid-near);color:var(--core-text)}
+/* настройка «включено / выключено»: ручка — искра (как core-switch); «включено» — свет, не цвет */
+.core :where(.check,.lm-sw){display:flex;align-items:flex-start;gap:var(--core-s-3);margin:0 0 var(--dlg-gap);color:var(--core-text);font:var(--core-human-2);cursor:var(--core-cursor-action);-webkit-user-select:none;user-select:none}
+.core :where(.check,.lm-sw) input{-webkit-appearance:none;appearance:none;flex:none;position:relative;width:36px;height:20px;margin:0;border-radius:var(--core-r-full);background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-text-3);cursor:inherit;transition:background-color var(--core-dur-2) linear,box-shadow var(--core-dur-2) linear}
+.core :where(.check,.lm-sw) input::before{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;background:var(--core-text-3);-webkit-mask:var(--core-glyph-spark) center/contain no-repeat;mask:var(--core-glyph-spark) center/contain no-repeat;transform:translateX(0) rotate(-90deg) scale(.78);transition:transform var(--core-dur-2) var(--core-ease-move),background-color var(--core-dur-2) linear}
+.core :where(.check,.lm-sw) input:checked{background:color-mix(in srgb,var(--core-on) 24%,transparent);box-shadow:inset 0 0 0 1px var(--core-on)}
+.core :where(.check,.lm-sw) input:checked::before{background:var(--core-on);transform:translateX(16px) rotate(0deg) scale(1)}
+@media (hover:hover){.core :where(.check,.lm-sw):hover input:not(:checked,:disabled){box-shadow:inset 0 0 0 1px var(--core-text)}}
+.core :where(.check,.lm-sw):has(:disabled){color:var(--core-text-3);cursor:not-allowed}
+.core :where(.check,.lm-sw) input:disabled{opacity:.5}
+
+/* ---------- выбор одного из нескольких: срок, способ оплаты, скорость голоса ---------- */
+.core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg){display:inline-flex;flex-wrap:wrap;gap:var(--core-s-05);max-width:100%;padding:var(--core-s-05);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:var(--dlg-edge)}
+.core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg)>button{display:inline-flex;align-items:center;justify-content:center;gap:var(--core-s-15);flex:1 1 auto;min-height:calc(var(--core-h-md) - 2 * var(--core-s-05));padding:0 var(--core-s-3);border-radius:calc(var(--core-r-sm) - 2px);color:var(--core-text-2);font:var(--core-human-2);font-weight:var(--core-w-2);white-space:nowrap;transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+@media (hover:hover){.core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg)>button:hover{color:var(--core-text)}}
+.core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg)>button:where([aria-checked=true],.on){color:var(--core-text);background:var(--core-fill-3);box-shadow:var(--dlg-edge-2)}
+.core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg)>button:disabled{color:var(--core-text-3);opacity:.6;cursor:not-allowed}
+.core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg)>button small{font:var(--core-machine-1);color:var(--core-text-3)}
+.core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg)>button:where([aria-checked=true],.on) small{color:var(--core-text-2)}
+
+/* ---------- метки: машинный голос ---------- */
+.core :where(.pc-badge,.lockt,.cu-tag,.ul-tag,.tm-st,.lm-st,.plan .tag,.gw-trial .tag,.ulw-pack .tag){display:inline-flex;align-items:center;min-height:20px;padding:0 var(--core-s-15);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);box-shadow:var(--dlg-edge);color:var(--core-text-2);font:var(--core-machine-1);letter-spacing:0;white-space:nowrap;vertical-align:middle}
+.core :where(.lm-st.ok,.tm-st.on){background:var(--core-ok-soft);box-shadow:none;color:var(--core-ok)}
+.core :where(.lm-st.wait){background:var(--core-warn-soft);box-shadow:none;color:var(--core-warn)}
+.core :where(.lm-st.bad){background:var(--core-bad-soft);box-shadow:none;color:var(--core-bad)}
+
+/* ---------- строки сообщений, пояснения, разделители ---------- */
+.core :where(.dsec){margin:var(--core-s-5) 0 var(--core-s-2);font:var(--core-human-1);font-weight:var(--core-w-2);color:var(--core-text-3)}
+.core :where(.dsec):first-child{margin-top:0}
+.core :where(.msgline){min-height:0;margin:0 0 var(--core-s-3);font:var(--core-human-2);color:var(--core-text-2)}
+.core :where(.msgline):empty{display:none}
+.core :where(.msgline.err,.tm-err,.tfa-err){color:var(--core-bad)}
+.core :where(.msgline.ok){color:var(--core-ok)}
+.core :where(.tm-err,.tfa-err){margin:0;font:var(--core-human-2)}
+.core :where(.tm-err,.tfa-err):empty{display:none}
+.core :where(.pnote,.lm-note,.mst-note,.rc-note,.rc-warm,.tm-f,.gw-meta){margin:var(--core-s-3) 0 0;font:var(--core-human-1);color:var(--core-text-3)}
+.core :where(.pnote,.api-step) code{padding:1px var(--core-s-1);border-radius:calc(var(--core-r-sm) - 4px);background:var(--core-fill-2);color:var(--core-text-2);font:var(--core-machine-1)}
+.core :where(.hr){height:1px;margin:var(--core-s-5) 0;background:var(--core-line)}
+.core :where(.btns){display:flex;justify-content:flex-end;flex-wrap:wrap;gap:var(--core-s-2);margin-top:var(--core-s-2)}
+.core :where(.btns) .sp{flex:1}
+.core :where(.dim){color:var(--core-text-3)}
+/* причина, по которой окно открылось, и предупреждения: пластина состояния, текст — основного цвета */
+.core :where(.reason,.ulw-alert){display:flex;align-items:center;gap:var(--core-s-3);margin:0 0 var(--dlg-gap);padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-md);background:var(--core-warn-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-warn) 34%,transparent);color:var(--core-text);font:var(--core-human-2)}
+.core :where(.ulw-alert.err){background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 40%,transparent)}
+/* плита внутри окна */
+.core :where(.acc-hero,.acc-plan,.api-hero,.api-step,.tm-box,.tfa-box,.lm-sec,.refcard,.gw-trial,.memrow,.kn-row,.vopt,.mst-row,.rc-stat,.ulw-bal,.ulw-own,.ulw-rules,.tm-acc,.team-cta,.tm-sum,.lm-pay){border-radius:var(--core-r-md);background:var(--dlg-plate);box-shadow:var(--dlg-edge)}
+/* строка «название и пояснение слева, действие справа» */
+.core :where(.acc-row){display:flex;align-items:center;gap:var(--core-s-4);padding:var(--core-s-3) 0}
+.core :where(.acc-row)>div:first-child{flex:1;min-width:0}
+.core :where(.acc-row,.acc-hero,.vtx,.tm-acc-tt,.api-tx,.rc-tt) :where(b){display:block;font:var(--core-human-2);font-weight:var(--core-w-2);color:var(--core-text)}
+.core :where(.acc-row,.acc-hero,.vtx,.rc-tt) :where(small),.core :where(.tm-acc-tt) span,.core :where(.api-tx)>small{display:block;margin-top:var(--core-s-05);font:var(--core-human-1);color:var(--core-text-3)}
+/* загрузка: точки собираются в строки будущего содержимого (вместо серых полос) */
+.core .p-skel{display:grid;gap:var(--core-s-3);padding:var(--core-s-2) 0;color:var(--core-point)}
+.core .p-skel i{display:block;height:12px;border-radius:var(--core-r-sm);background:radial-gradient(circle,currentColor 1px,transparent 1.7px) 50% 50%/6px 6px;opacity:.72}
+.core .p-skel i:nth-of-type(2){width:82%}
+.core .p-skel i:nth-of-type(3){width:58%}
+@media (prefers-reduced-motion:no-preference){
+  .core:not([data-core-motion=reduce]) .p-skel i{animation:core-gather var(--core-dur-4) var(--core-ease-out) both,core-breathe var(--core-ambient) ease-in-out var(--core-dur-4) infinite alternate}
+  .core:not([data-core-motion=reduce]) .p-skel i:nth-of-type(2){animation-delay:40ms,calc(var(--core-dur-4) + 200ms)}
+  .core:not([data-core-motion=reduce]) .p-skel i:nth-of-type(3){animation-delay:80ms,calc(var(--core-dur-4) + 400ms)}
+}
+
+/* ======================================================================================================
+   3. НАСТРОЙКИ АККАУНТА — плита постоянного размера: разделы меняются поворотом грани, окно не скачет
+   ====================================================================================================== */
+.core .modal .dlg.accdlg{height:min(640px,100%)}
+.core .dlg.accdlg .dbody{display:flex;flex:1;padding:0 0 0 var(--core-s-3);overflow:hidden}
+.core .acc{display:grid;grid-template-columns:184px minmax(0,1fr);flex:1;min-width:0;min-height:0}
+.core .acc-nav{display:flex;flex-direction:column;gap:var(--core-s-05);min-height:0;padding:var(--core-s-2) var(--core-s-3) var(--core-s-4) 0;border-right:1px solid var(--core-line);overflow:auto;scrollbar-width:none}
+.core .acc-nav::-webkit-scrollbar{display:none}
+.core .acc-nav button{display:flex;align-items:center;gap:var(--core-s-3);flex:none;min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:var(--core-r-sm);color:var(--core-text-2);font:var(--core-human-2);text-align:left;white-space:nowrap;transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+.core .acc-nav button svg{width:var(--core-icon);height:var(--core-icon);color:var(--core-text-3);transition:color var(--core-dur-1) linear}
+@media (hover:hover){.core .acc-nav button:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core .acc-nav button:active{background:var(--core-fill-2)}
+.core .acc-nav button.on{background:var(--core-fill-2);color:var(--core-text);font-weight:var(--core-w-2)}
+.core .acc-nav button.on svg{color:var(--core-text)}
+.core .acc-nav button:focus-visible{outline-offset:-2px}
+.core .acc-body{min-width:0;min-height:0;padding:var(--core-s-2) var(--core-s-6) var(--core-s-6);overflow:auto;overscroll-behavior:contain;transform-origin:50% 0}
+/* профиль */
+.core .acc-hero{display:flex;align-items:center;gap:var(--core-s-4);margin-bottom:var(--core-s-5);padding:var(--core-s-4)}
+.core .acc-av{display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:50%;background:var(--core-fill-3);box-shadow:var(--dlg-edge-2);color:var(--core-text);font:var(--core-human-3);font-weight:var(--core-w-3);text-transform:uppercase}
+.core .acc-hero b{font:var(--core-human-3);font-weight:var(--core-w-3)}
+.core .acc-note{display:flex;align-items:flex-start;gap:var(--core-s-2);margin-top:var(--core-s-5);padding-top:var(--core-s-4);border-top:1px solid var(--core-line);font:var(--core-human-1);color:var(--core-text-3)}
+.core .acc-note:first-child{margin-top:0;padding-top:0;border-top:0}
+.core .acc-note svg{width:var(--core-icon);height:var(--core-icon);color:var(--core-text-3)}
+/* тариф */
+.core .acc-plan{display:flex;align-items:center;justify-content:space-between;gap:var(--core-s-4);flex-wrap:wrap;padding:var(--core-s-5)}
+.core .acc-plan small{display:block;font:var(--core-human-1);color:var(--core-text-3)}
+.core .acc-plan b{display:block;margin:var(--core-s-05) 0;font:var(--core-machine-4);font-weight:var(--core-w-2);color:var(--core-text)}
+.core .acc-plan span{font:var(--core-human-1);color:var(--core-text-2)}
+.core .acc-bts{display:flex;flex-wrap:wrap;gap:var(--core-s-2)}
+.core .acc-use{display:flex;align-items:center;gap:var(--core-s-3);min-height:var(--core-h-md);border-top:1px solid var(--core-line);color:var(--core-text-2);font:var(--core-human-2)}
+.core .dsec+.acc-use{border-top:0}
+.core .acc-use>span:not(.core-ring){flex:1;min-width:0}
+.core .acc-use b{font:var(--core-machine-2);font-weight:var(--core-w-2);color:var(--core-text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.core .acc-use.out b{color:var(--core-bad)}
+/* приглашение друга */
+.core .refcard{position:relative;margin-top:var(--core-s-5);padding:var(--core-s-4)}
+.core .rc-top{display:flex;align-items:center;gap:var(--core-s-3)}
+.core .rc-ic,.core .api-ic{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:var(--core-r-sm);background:var(--core-fill-2);box-shadow:var(--dlg-edge-2);color:var(--core-text)}
+.core .rc-ic svg,.core .api-ic svg{width:var(--core-icon-lg);height:var(--core-icon-lg)}
+.core .rc-link,.core .tm-linkrow,.core .gw-sh .gw-row{display:flex;align-items:center;gap:var(--core-s-2);margin-top:var(--core-s-3)}
+.core .rc-link code,.core .tm-linkrow code,.core .tfa-key code{flex:1;min-width:0;min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:var(--dlg-edge);color:var(--core-text);font:var(--core-machine-2);line-height:var(--core-h-md);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .rc-stats{display:flex;gap:var(--core-s-2);margin-top:var(--core-s-3)}
+.core .rc-stat{flex:1;display:flex;flex-direction:column;gap:var(--core-s-05);min-width:0;padding:var(--core-s-2) var(--core-s-3);border-radius:var(--core-r-sm);background:var(--core-fill-1)}
+.core .rc-stat b{font:var(--core-machine-3);font-weight:var(--core-w-2);font-variant-numeric:tabular-nums}
+.core .rc-stat small{font:var(--core-human-1);color:var(--core-text-3)}
+.core .refcard .rc-rules{margin:var(--core-s-3) 0 0;padding:0 0 0 var(--core-s-5);font:var(--core-human-1);color:var(--core-text-3)}
+.core .refcard .rc-rules li{margin:var(--core-s-05) 0}
+.core .rc-prog{margin-top:var(--core-s-3)}
+.core .rc-pt{display:flex;justify-content:space-between;gap:var(--core-s-3);margin-bottom:var(--core-s-15);font:var(--core-human-1);color:var(--core-text-2)}
+.core .rc-pt b{font:var(--core-machine-1);white-space:nowrap}
+.core .rc-tiers{display:grid;grid-template-columns:1fr 1fr;gap:var(--core-s-2) var(--core-s-4);margin-top:var(--core-s-3)}
+.core .rc-tier{display:flex;align-items:center;gap:var(--core-s-2);min-width:0;font:var(--core-human-1);color:var(--core-text-3)}
+.core .rc-tier span:last-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .rc-n,.core .api-n{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--core-fill-2);box-shadow:var(--dlg-edge-2);color:var(--core-text-2);font:var(--core-machine-1)}
+.core .rc-n svg{width:12px;height:12px}
+.core .rc-tier.done{color:var(--core-text)}
+.core .rc-tier.done .rc-n{background:var(--core-on);box-shadow:none;color:var(--core-on-ink)}
+.core .rc-chip{display:inline-flex;align-items:center;gap:var(--core-s-15);margin-top:var(--core-s-3);min-height:var(--core-h-sm);padding:0 var(--core-s-3);border-radius:var(--core-r-full);background:var(--core-fill-2);box-shadow:var(--dlg-edge);color:var(--core-text-2);font:var(--core-human-1)}
+.core .rc-chip svg{width:14px;height:14px}
+/* тонкая полоса расхода там, где кольцу нет места (карточка тарифа в боковой панели задана в core-chat.css) */
+.core .rc-prog .pc-bar{height:2px;border-radius:1px;background:var(--core-line-2);overflow:hidden}
+.core .rc-prog .pc-bar i{display:block;height:100%;background:var(--core-text-2)}
+/* память, файлы проекта */
+.core .memrow,.core .kn .kn-row{display:flex;align-items:flex-start;gap:var(--core-s-3);margin-bottom:var(--core-s-2);padding:var(--core-s-3) var(--core-s-2) var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-sm);color:var(--core-text);font:var(--core-human-2)}
+.core .memrow span{flex:1;min-width:0;overflow-wrap:anywhere}
+.core .memrow small{display:block;margin-top:var(--core-s-05);font:var(--core-machine-1);color:var(--core-text-3)}
+.core .memrow .ib,.core .kn .kn-del{flex:none;margin:calc(var(--core-s-15) * -1) 0}
+.core .kn .kn-list{display:flex;flex-direction:column;margin:var(--core-s-1) 0 var(--core-s-2)}
+.core .kn .kn-row{align-items:center}
+.core .kn .kn-n{flex:1;min-width:0;font:var(--core-machine-2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .kn .kn-row small{font:var(--core-machine-1);color:var(--core-text-3);white-space:nowrap}
+.core .kn .kn-del{min-width:var(--core-h-sm);justify-content:center;font:var(--core-human-3);line-height:1}
+.core .kn .kn-sum,.core .kn .kn-empty{font:var(--core-human-1);color:var(--core-text-3)}
+.core .kn .kn-add{align-self:flex-start;margin-bottom:var(--core-s-2)}
+/* голос */
+.core .vlist{display:flex;flex-direction:column;gap:var(--core-s-2)}
+.core .vopt{position:relative;display:flex;align-items:center;gap:var(--core-s-3);padding:var(--core-s-2) var(--core-s-2) var(--core-s-2) var(--core-s-3);cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+@media (hover:hover){.core .vopt:hover{background:var(--core-fill-2)}}
+.core .vopt.on{background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-2)}
+.core .vopt input{position:absolute;opacity:0;pointer-events:none}
+.core .vopt:has(input:focus-visible){outline:2px solid var(--core-focus);outline-offset:2px}
+.core .vav{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%;background:var(--core-fill-2);box-shadow:var(--dlg-edge-2);color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-3)}
+.core .vopt.on .vav{background:var(--core-on);box-shadow:none;color:var(--core-on-ink)}
+.core .vtx{flex:1;min-width:0}
+.core .vplay{display:inline-flex;align-items:center;gap:var(--core-s-15)}
+/* API */
+.core .api-hero{display:flex;align-items:flex-start;gap:var(--core-s-4);padding:var(--core-s-4)}
+.core .api-tx{flex:1;min-width:0}
+.core .api-tx>b{font:var(--core-human-3);font-weight:var(--core-w-3)}
+.core .api-bts{display:flex;flex-wrap:wrap;gap:var(--core-s-2);margin-top:var(--core-s-4)}
+.core .api-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--core-s-2)}
+.core .api-step{padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-sm)}
+.core .api-step>b{display:block;margin:var(--core-s-2) 0 var(--core-s-05);font:var(--core-human-2);font-weight:var(--core-w-2);color:var(--core-text)}
+.core .api-step>small{display:block;font:var(--core-human-1);color:var(--core-text-3)}
+.core .api-cmd{margin-top:var(--dlg-gap);border-radius:var(--core-r-sm);background:var(--core-glass-dense);box-shadow:var(--dlg-edge);overflow:hidden}
+.core .api-cmdh{display:flex;align-items:center;gap:var(--core-s-2);min-height:var(--core-h-md);padding:0 var(--core-s-2) 0 var(--core-s-3);border-bottom:1px solid var(--core-line);color:var(--core-text-3);font:var(--core-machine-1)}
+.core .api-cmdh>svg{width:14px;height:14px}
+.core .api-ccopy{margin-left:auto;font:var(--core-machine-1)}
+.core .api-cmd code{display:block;padding:var(--core-s-3);color:var(--core-text);font:var(--core-machine-1);line-height:1.7;white-space:pre-wrap;word-break:break-all}
+/* состояние моделей: малое ядро у каждой модели, имя — машинным голосом, состояние — словами */
+.core .mst{display:flex;flex-direction:column;gap:var(--core-s-15)}
+.core .mst-head,.core .mst-row{display:grid;grid-template-columns:minmax(0,1.5fr) 72px minmax(0,1fr);gap:var(--core-s-3);align-items:center}
+.core .mst-head{padding:0 var(--core-s-3) var(--core-s-1);font:var(--core-human-1);color:var(--core-text-3)}
+.core .mst-row{padding:var(--core-s-2) var(--core-s-3);border-radius:var(--core-r-sm)}
+.core .mst-name{display:flex;align-items:center;gap:var(--core-s-3);min-width:0}
+.core .mst-name>div{min-width:0}
+.core .mst-name b{display:block;font:var(--core-machine-2);font-weight:var(--core-w-2);color:var(--core-text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .mst-name small{display:block;font:var(--core-human-1);color:var(--core-text-3);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .mst-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--core-text-3)}
+.core .mst-dot.ok{background:var(--core-ok)}
+.core .mst-dot.bad{background:var(--core-bad)}
+.core .mst-row.bad .mst-name small{color:var(--core-bad)}
+.core .mst-cell{font:var(--core-machine-1);color:var(--core-text-2);text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.core .mst-head span:nth-child(n+2){text-align:right}
+/* безопасность, двухфакторная защита */
+.core .tfa-row small{max-width:440px}
+.core .tfa-btns,.core .push-btns{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--core-s-2);flex:none}
+.core .tfa-box{display:flex;flex-direction:column;gap:var(--core-s-3);margin:var(--core-s-1) 0 var(--core-s-3);padding:var(--core-s-4)}
+.core .tfa-box p{color:var(--core-text-2);font:var(--core-human-2)}
+.core .tfa-setup{display:flex;align-items:flex-start;gap:var(--core-s-4)}
+/* QR-код остаётся чёрным по белому в обеих темах: иначе телефон его не прочтёт */
+.core .tfa-qr{flex:none;width:168px;height:168px;padding:var(--core-s-15);border-radius:var(--core-r-sm);background:#fff}
+.core .tfa-qr svg{display:block;width:100%;height:100%;stroke:none}
+.core .tfa-side{display:flex;flex-direction:column;gap:var(--core-s-3);min-width:0}
+.core .tfa-key{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2)}
+.core .tfa-key code{flex:0 1 auto;white-space:normal;word-break:break-all;line-height:var(--core-lh-2);padding-top:var(--core-s-2);padding-bottom:var(--core-s-2);letter-spacing:.04em;-webkit-user-select:all;user-select:all}
+.core .tfa-form{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2)}
+.core .tfa-form input{width:190px;font:var(--core-machine-3);letter-spacing:.12em}
+.core .tfa-codes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--core-s-15) var(--core-s-4);padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:var(--dlg-edge);color:var(--core-text);font:var(--core-machine-3);letter-spacing:.06em;-webkit-user-select:all;user-select:all}
+.core .danger{margin-top:var(--core-s-5);padding:var(--core-s-1) var(--core-s-4);border-radius:var(--core-r-md);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 30%,transparent)}
+.core .danger form{padding-bottom:var(--core-s-3)}
+
+/* ======================================================================================================
+   4. ПРОЕКТ, ДОСТУП К ЧАТУ ПО ССЫЛКЕ
+   ====================================================================================================== */
+.core #projF .btns{margin-top:var(--core-s-4)}
+.core .gw-sh p{margin:0 0 var(--core-s-3);color:var(--core-text-2);font:var(--core-human-2)}
+.core .gw-sh input{flex:1;font:var(--core-machine-2)}
+.core .gw-sh .gw-row{margin-top:0}
+.core .gw-sh .gw-acts{display:flex;flex-wrap:wrap;gap:var(--core-s-2);margin-top:var(--core-s-3)}
+.core .gw-sh .msgline{margin:var(--core-s-3) 0 0}
+
+/* ======================================================================================================
+   5. ТАРИФЫ И ОПЛАТА — три плиты на разной глубине; выбранная выходит вперёд, и только у неё раскалённая кнопка.
+      Цены, условия и ошибки — самое читаемое в окне: цифры машинным голосом, одна главная цена на плиту.
+   ====================================================================================================== */
+.core .pm-per{display:flex;width:max-content;margin:0 auto var(--dlg-gap)}
+.core .paym{display:flex;align-items:center;gap:var(--core-s-3);flex-wrap:wrap;margin:0 0 var(--dlg-gap);color:var(--core-text-2);font:var(--core-human-2)}
+.core .plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--core-s-3);margin-top:var(--dlg-gap)}
+.core .plans.n4{grid-template-columns:repeat(2,minmax(0,1fr))}
+.core .plan{
+  position:relative;display:flex;flex-direction:column;gap:var(--core-s-3);min-width:0;padding:var(--core-s-5);border-radius:var(--core-r-md);
+  background:var(--core-fill-1);box-shadow:var(--dlg-edge);color:var(--core-text-2);transform:scale(.97);
+  transition:transform var(--core-dur-3) var(--core-ease-move),background-color var(--core-dur-2) linear,box-shadow var(--core-dur-2) linear;
+}
+/* глубина по порядку тарифов: чем выше тариф, тем ближе плита и светлее её грань */
+.core .plan:nth-child(n+2){box-shadow:var(--dlg-edge-2)}
+.core .plan:nth-child(n+3){box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-text-3) 70%,transparent)}
+/* выбранная плита — ближе всех. Пока скрипт не отметил выбор (.plans[data-sel]), впереди рекомендованный тариф */
+.core .plan.fwd,.core .plans:not([data-sel]) .plan.hot{z-index:1;transform:none;background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-2),var(--core-shadow-near)}
+.core .plan .tag{position:absolute;top:var(--core-s-4);right:var(--core-s-4)}
+.core .plan h3{display:flex;align-items:center;gap:var(--core-s-2);min-height:20px;font:var(--core-machine-3);font-weight:var(--core-w-2);color:var(--core-text)}
+.core .plan p{margin-top:var(--core-s-1);font:var(--core-human-1);color:var(--core-text-3)}
+/* цена: одна главная цифра; старая цена — мелкой строкой над ней, срок — мелко после */
+.core .plan .price{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:var(--core-s-2);color:var(--core-text);font:var(--core-machine-5);font-weight:var(--core-w-2);letter-spacing:var(--core-track-5);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* зачёркнутая цена — человеческим голосом: у нуля JetBrains Mono точка внутри, под чертой зачёркивания он читается как восьмёрка */
+.core .plan .price s,.core .tm-tot s{flex:0 0 100%;color:var(--core-text-3);font:var(--core-human-2);font-variant-numeric:tabular-nums;letter-spacing:0;text-decoration-thickness:1px}
+.core .plan .price:not(:has(s))::before{content:"";flex:0 0 100%;height:var(--core-lh-2)}
+.core .plan .price small{color:var(--core-text-3);font:var(--core-machine-1);letter-spacing:0}
+.core .pm-month,.core .plan .gw-first{margin-top:calc(var(--core-s-2) * -1);color:var(--core-text-2);font:var(--core-machine-1)}
+.core .plan ul{display:flex;flex-direction:column;gap:var(--core-s-2);flex:1;padding-top:var(--core-s-3);border-top:1px solid var(--core-line);list-style:none;color:var(--core-text-2);font:var(--core-human-1)}
+.core .plan li{display:flex;gap:var(--core-s-2)}
+.core .plan li svg{width:14px;height:14px;margin-top:1px;color:var(--core-text-3)}
+.core .plan .btn{width:100%;min-height:var(--core-h-lg)}
+.core .plan .gw-tr{justify-content:center;width:100%;margin-top:calc(var(--core-s-1) * -1);text-decoration:underline;text-decoration-color:var(--core-text-3);text-underline-offset:3px}
+.core .plans:has(.gw-tr) .plan:not(:has(.gw-tr))::after{content:"";flex:none;height:var(--core-h-sm);margin-top:calc(var(--core-s-1) * -1)}
+/* в окне тарифов несколько кнопок .pri — раскалена одна, у плиты впереди; остальные стеклянные */
+.core .plan .btn.pri{color:var(--core-text);font-weight:var(--core-w-2);background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-line-2);filter:none}
+@media (hover:hover){.core .plan .btn.pri:hover{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.core .plan.fwd .btn[data-buy]:not(:disabled),.core .plans:not([data-sel]) .plan.hot .btn[data-buy]:not(:disabled){
+  color:var(--core-text-on-heat);font-weight:var(--core-w-3);
+  background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-4),var(--core-heat-3) 70%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 38%,transparent),0 6px 22px -8px color-mix(in srgb,var(--core-heat-3) 70%,transparent);
+}
+@media (hover:hover){.core .plan.fwd .btn[data-buy]:not(:disabled):hover,.core .plans:not([data-sel]) .plan.hot .btn[data-buy]:not(:disabled):hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 64%,transparent),0 8px 28px -8px color-mix(in srgb,var(--core-heat-3) 92%,transparent);filter:brightness(1.09)}}
+.core .plan.fwd .btn[data-buy]:not(:disabled):active,.core .plans:not([data-sel]) .plan.hot .btn[data-buy]:not(:disabled):active{background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-3),var(--core-heat-2) 78%);filter:none}
+@media (any-pointer:fine){.core .plan:not(.fwd) .btn.pri{cursor:var(--core-cursor-action)}.core .plan.fwd .btn[data-buy]:not(:disabled){cursor:var(--core-cursor-action-on-heat)}}
+/* пробный доступ: плита над тарифами; её кнопка стеклянная — янтарь остаётся у выбранного тарифа */
+.core .gw-trial{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--core-s-1) var(--core-s-4);margin-top:var(--dlg-gap);padding:var(--core-s-4) var(--core-s-5)}
+.core .gw-trial .tag{grid-column:1;justify-self:start}
+.core .gw-trial>div{grid-column:1;min-width:0}
+.core .gw-trial b{display:block;font:var(--core-human-3);font-weight:var(--core-w-3);color:var(--core-text)}
+.core .gw-trial small{display:block;margin-top:var(--core-s-05);font:var(--core-human-1);color:var(--core-text-3)}
+.core .gw-trial .btn{grid-column:2;grid-row:1 / span 2;align-self:center}
+.core .gw-trial .btn.pri,.core .gw-end .gw-acts .btn.pri~.btn.pri{color:var(--core-text);font-weight:var(--core-w-2);background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-3);filter:none}
+@media (hover:hover){.core .gw-trial .btn.pri:hover{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-2);filter:none}}
+@media (any-pointer:fine){.core .gw-trial .btn.pri{cursor:var(--core-cursor-action)}}
+/* промокод и строка состояния оплаты */
+.core .promo{display:flex;align-items:center;gap:var(--core-s-2);flex-wrap:wrap;margin-top:var(--core-s-5)}
+.core .promo input{width:200px;font:var(--core-machine-2);text-transform:uppercase}
+.core .promo input::placeholder{text-transform:none;font:var(--core-human-2)}
+.core .promo .msgline{margin:0}
+.core #payMsg:not(:empty){position:relative;margin:var(--core-s-3) 0 0;padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-md);background:var(--core-fill-1);box-shadow:var(--dlg-edge-2);color:var(--core-text);font:var(--core-human-2)}
+.core #payMsg.err:not(:empty){padding-left:calc(var(--core-s-4) + 24px);background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 44%,transparent)}
+.core #payMsg.err:not(:empty)::before{content:"";position:absolute;left:var(--core-s-4);top:calc(var(--core-s-3) + 2px);width:16px;height:16px;background:var(--core-bad);-webkit-mask:var(--core-glyph-close) center/contain no-repeat;mask:var(--core-glyph-close) center/contain no-repeat}
+.core #payMsg.ok:not(:empty){background:var(--core-ok-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-ok) 40%,transparent)}
+.core .dbody>.msgline{margin-bottom:var(--dlg-gap)}
+
+/* ======================================================================================================
+   6. ЛИМИТЫ — везде кольцо вокруг малого ядра; пакеты и сбросы; дневной лимит исчерпан
+   ====================================================================================================== */
+.core .lm-sec{margin-bottom:var(--core-s-3);padding:var(--core-s-4)}
+.core .lm-sec:last-child{margin-bottom:0}
+.core .lm-sec h4{display:flex;align-items:center;gap:var(--core-s-2);margin:0 0 var(--core-s-3);font:var(--core-human-2);font-weight:var(--core-w-3);color:var(--core-text)}
+.core .lm-sec h4 small{margin-left:auto;font:var(--core-machine-1);color:var(--core-text-3)}
+.core .lm-use{display:flex;align-items:center;gap:var(--core-s-3);min-height:var(--core-h-md);color:var(--core-text-2);font:var(--core-human-2)}
+.core .lm-use>span:not(.core-ring){flex:1;min-width:0}
+.core .lm-use b{font:var(--core-machine-3);font-weight:var(--core-w-2);color:var(--core-text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.core .lm-use.out b{color:var(--core-bad)}
+.core .lm-meter{height:2px;margin:var(--core-s-15) 0;border-radius:1px;background:var(--core-line-2);overflow:hidden}
+.core .lm-meter i{display:block;height:100%;background:var(--core-text-2)}
+.core .lm-meter.out i{background:var(--core-bad)}
+.core .lm-packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--core-s-2)}
+.core .lm-pack{display:flex;flex-direction:column;align-items:flex-start;gap:var(--core-s-05);padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-sm);background:var(--core-fill-1);box-shadow:var(--dlg-edge-2);color:var(--core-text);text-align:left;transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,transform var(--core-dur-1) var(--core-ease-out)}
+@media (hover:hover){.core .lm-pack:hover:not(:disabled){background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.core .lm-pack:active:not(:disabled){background:var(--core-fill-3);transform:scale(.98)}
+.core .lm-pack:disabled{opacity:.6;cursor:not-allowed}
+.core .lm-pack b{font:var(--core-machine-3);font-weight:var(--core-w-2);font-variant-numeric:tabular-nums}
+.core .lm-pack span{font:var(--core-machine-2);color:var(--core-text)}
+.core .lm-pack small{font:var(--core-human-1);color:var(--core-text-3)}
+.core .lm-have{display:flex;flex-wrap:wrap;gap:var(--core-s-15);margin-bottom:var(--core-s-2)}
+.core .lm-have span{display:inline-flex;align-items:center;min-height:20px;padding:0 var(--core-s-15);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);color:var(--core-text-2);font:var(--core-machine-1)}
+.core .lm-row{display:flex;align-items:center;gap:var(--core-s-2);flex-wrap:wrap}
+.core .lm-sw{margin:var(--core-s-3) 0}
+.core .lm-pays{display:flex;flex-direction:column;gap:var(--core-s-15)}
+.core .lm-pay{display:flex;align-items:center;gap:var(--core-s-3);padding:var(--core-s-2) var(--core-s-3);border-radius:var(--core-r-sm);color:var(--core-text);font:var(--core-human-2)}
+.core .lm-pay div{flex:1;min-width:0}
+.core .lm-pay small{display:block;font:var(--core-machine-1);color:var(--core-text-3)}
+.core .lm-pay button{min-height:var(--core-h-sm);padding:0 var(--core-s-3);font-size:var(--core-fs-1);line-height:var(--core-lh-1)}
+/* дневной лимит исчерпан: погасшее кольцо, время до сброса машинным голосом */
+.core .gw-end{display:flex;flex-direction:column;align-items:center;padding:var(--core-s-2) 0 0;text-align:center}
+.core .gw-end .core-ring{margin-bottom:var(--core-s-3)}
+.core .gw-end p{max-width:420px;margin:0 auto;color:var(--core-text-2);font:var(--core-human-2)}
+.core .gw-end .gw-clock{margin:var(--core-s-2) 0 var(--core-s-1);color:var(--core-text);font:var(--core-machine-5);font-weight:var(--core-w-2);letter-spacing:var(--core-track-5);font-variant-numeric:tabular-nums}
+.core .gw-end .gw-acts{display:flex;flex-direction:column;gap:var(--core-s-2);align-self:stretch;margin-top:var(--core-s-5)}
+.core .gw-end .gw-acts .btn{width:100%;min-height:var(--core-h-lg)}
+
+/* ======================================================================================================
+   7. ULTRA-КРЕДИТЫ (#ulWin — то же окно Core; содержимое строит js/21-ultra.js)
+   ====================================================================================================== */
+.core .ulw .ulw-dlg{width:min(820px,100%)}
+.core .ulw-grab{display:none}
+.core .ulw-head{gap:var(--core-s-2)}
+.core .ulw-head h2{flex:1;margin:0;font:var(--core-human-4);letter-spacing:var(--core-track-4);color:var(--core-text);outline:none}
+.core .ulw-hbtn{min-height:var(--core-h-md);padding:0 var(--core-s-3);background:transparent;box-shadow:none;color:var(--core-text-2)}
+@media (hover:hover){.core .ulw-hbtn:hover{background:var(--core-fill-1);box-shadow:none;color:var(--core-text)}}
+.core .ulw-hbtn[aria-pressed=true]{background:var(--core-fill-2);color:var(--core-text)}
+.core .ulw-body{padding-top:var(--core-s-2)}
+.core .ulw-foot{display:block;padding:var(--core-s-4) var(--core-s-6)}
+.core .ulw-foot:empty{display:none}
+.core .ulw-row{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--core-s-4)}
+.core .ulw-row:only-child .btn:only-child{margin-left:auto}
+.core .ulw-foot .msgline{margin:var(--core-s-3) 0 0}
+.core .ulw-buy{min-height:var(--core-h-lg);min-width:300px;margin-left:auto;padding:0 var(--core-s-6);font:var(--core-human-3);font-weight:var(--core-w-3)}
+.core .ulw-pm{display:grid;gap:var(--core-s-15);min-width:0}
+.core .ulw-pm>span{font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-alert span{flex:1}
+.core .ulw-alert svg{color:var(--core-warn)}
+.core .ulw-alert.err svg{color:var(--core-bad)}
+.core .ulw-bal{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:var(--core-s-2) var(--core-s-8);padding:var(--core-s-4) var(--core-s-5)}
+.core .ulw-tot small{display:block;font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-tot b{display:flex;align-items:baseline;gap:var(--core-s-3);margin-top:var(--core-s-05);color:var(--core-text);font:var(--core-machine-5);font-weight:var(--core-w-2);letter-spacing:var(--core-track-5);font-variant-numeric:tabular-nums;white-space:nowrap}
+.core .ulw-flash{color:var(--core-ok);font:var(--core-machine-2);font-style:normal;letter-spacing:0}
+.core .ulw-leg{display:grid;gap:var(--core-s-15);min-width:0}
+.core .ulw-leg div{display:flex;align-items:baseline;gap:var(--core-s-2);font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-leg b{font:var(--core-machine-2);font-weight:var(--core-w-2);font-variant-numeric:tabular-nums}
+.core .ulw-leg i{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;transform:translateY(-1px)}
+.core .ulw .d1{background:var(--core-on)}
+.core .ulw .d2{background:var(--core-text-3)}
+.core .ulw-bar{grid-column:1 / -1;display:flex;gap:2px;height:2px;margin-top:var(--core-s-1);border-radius:1px;background:var(--core-line-2);overflow:hidden}
+.core .ulw-bar i{display:block;height:100%}
+.core .ulw-sec{display:flex;align-items:baseline;justify-content:space-between;gap:var(--core-s-3);flex-wrap:wrap;margin:var(--core-s-5) 0 var(--core-s-3)}
+.core .ulw-sec h3,.core .ulw-htitle{margin:0;font:var(--core-human-2);font-weight:var(--core-w-3);color:var(--core-text)}
+.core .ulw-htitle{margin-bottom:var(--core-s-2)}
+.core .ulw-sec small{font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--core-s-3)}
+.core .ulw-pack{position:relative;display:flex;flex-direction:column;align-items:flex-start;padding:var(--core-s-4);border-radius:var(--core-r-md);background:var(--core-fill-1);box-shadow:var(--dlg-edge);color:var(--core-text);text-align:left;transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+@media (hover:hover){.core .ulw-pack:hover{background:var(--core-fill-2);box-shadow:var(--dlg-edge-2)}}
+.core .ulw-pack[aria-checked=true]{background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-2)}
+.core .ulw-pack:disabled{opacity:.7;cursor:progress}
+.core .ulw-pack .n{font:var(--core-machine-5);font-weight:var(--core-w-2);letter-spacing:var(--core-track-5);font-variant-numeric:tabular-nums}
+.core .ulw-pack .u{margin-top:var(--core-s-05);font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-pack .p{margin-top:var(--core-s-3);font:var(--core-machine-3);font-weight:var(--core-w-2);font-variant-numeric:tabular-nums}
+.core .ulw-pack .e{display:grid;gap:var(--core-s-05);width:100%;margin-top:var(--core-s-3);padding-top:var(--core-s-3);border-top:1px solid var(--core-line);font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-pack .e b{font:var(--core-machine-1);font-weight:var(--core-w-2);color:var(--core-text);font-variant-numeric:tabular-nums}
+.core .ulw-pack .e .sm{display:none}
+.core .ulw-pack .e .sm i{font-style:normal}
+.core .ulw-pack .ck{position:absolute;top:var(--core-s-3);right:var(--core-s-3);display:grid;place-items:center;width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--core-text-3);color:transparent}
+.core .ulw-pack .ck svg{width:12px;height:12px;stroke-width:2.4}
+.core .ulw-pack[aria-checked=true] .ck{background:var(--core-on);box-shadow:none;color:var(--core-on-ink)}
+.core .ulw-pack .tag{position:absolute;top:var(--core-s-3);right:calc(var(--core-s-3) + 28px)}
+.core .ulw-own{display:flex;flex-direction:column;justify-content:space-between;gap:var(--core-s-3);padding:var(--core-s-4);background:transparent;box-shadow:inset 0 0 0 1px var(--core-line);border-radius:var(--core-r-md);transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+.core .ulw-own.on{background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-2)}
+.core .ulw-own b{display:block;font:var(--core-human-2);font-weight:var(--core-w-2);color:var(--core-text)}
+.core .ulw-own small{display:block;margin-top:var(--core-s-05);font:var(--core-human-1);color:var(--core-text-3)}
+/* счётчик «минус — число — плюс» (кредиты, места в команде) */
+.core :is(.ulw-step,.tm-step){display:inline-flex;align-items:center;align-self:flex-start}
+.core .ulw-step{border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:var(--dlg-edge-2);overflow:hidden}
+.core .ulw-step button{display:grid;place-items:center;width:var(--core-h-md);height:var(--core-h-md);color:var(--core-text);transition:background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .ulw-step button:hover{background:var(--core-fill-2)}}
+.core .ulw-step input{width:96px;height:var(--core-h-md);padding:0 var(--core-s-15);border:0;border-left:1px solid var(--core-line);border-right:1px solid var(--core-line);border-radius:0;background:transparent;color:var(--core-text);font:var(--core-machine-3);font-weight:var(--core-w-2);text-align:center;font-variant-numeric:tabular-nums;outline:none}
+.core .ulw-step input::placeholder{font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-step input:focus{box-shadow:inset 0 0 0 2px var(--core-focus)}
+.core .ulw-rules{margin-top:var(--dlg-gap);border-radius:var(--core-r-sm)}
+.core .ulw-rules summary{display:flex;align-items:center;gap:var(--core-s-3);min-height:var(--core-h-lg);padding:0 var(--core-s-4);list-style:none;color:var(--core-text);font:var(--core-human-2);cursor:var(--core-cursor-action)}
+.core .ulw-rules summary::-webkit-details-marker{display:none}
+.core .ulw-rules summary small{flex:1;text-align:right;font:var(--core-human-1);color:var(--core-text-3)}
+.core .ulw-rules summary svg{color:var(--core-text-3);transition:transform var(--core-dur-2) var(--core-ease-move)}
+.core .ulw-rules[open] summary svg:last-child{transform:rotate(180deg)}
+.core .ulw-rules p{margin:0;padding:0 var(--core-s-4) var(--core-s-4) calc(var(--core-s-4) + 30px);font:var(--core-human-1);color:var(--core-text-2)}
+.core .ulw-back{margin:0 0 var(--core-s-2) calc(var(--core-s-2) * -1)}
+.core .ulw-hist{margin:0;padding:0;list-style:none}
+.core .ulw-hist li{display:flex;align-items:center;justify-content:space-between;gap:var(--core-s-3);padding:var(--core-s-3) 0;border-bottom:1px solid var(--core-line);color:var(--core-text);font:var(--core-human-2)}
+.core .ulw-hist li:last-child{border-bottom:0}
+.core .ulw-hist small{display:block;font:var(--core-machine-1);color:var(--core-text-3)}
+.core .ulw-hist b{font:var(--core-machine-2);font-weight:var(--core-w-2);font-variant-numeric:tabular-nums}
+.core .ulw-hist b.plus{color:var(--core-ok)}
+.core .ulw-hist b.minus{color:var(--core-text-2)}
+.core .ulw-empty{display:grid;justify-items:center;gap:var(--core-s-3);padding:var(--core-s-10) var(--core-s-3);text-align:center;color:var(--core-text-3);font:var(--core-human-2)}
+.core .ulw-empty svg{width:var(--core-icon-lg);height:var(--core-icon-lg)}
+
+/* ======================================================================================================
+   8. КОМАНДНЫЙ ТАРИФ
+   ====================================================================================================== */
+.core .tm{display:flex;flex-direction:column;gap:var(--core-s-3)}
+.core .tm-intro{margin:0;color:var(--core-text-2);font:var(--core-human-2)}
+.core .tm-box{display:flex;flex-direction:column;gap:var(--core-s-2);padding:var(--core-s-4)}
+.core .tm-invite{background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-3)}
+.core .tm-hd{display:flex;align-items:center;justify-content:space-between;gap:var(--core-s-3);flex-wrap:wrap}
+.core .tm-hd b{font:var(--core-human-3);font-weight:var(--core-w-3);color:var(--core-text)}
+.core .tm-meta{color:var(--core-text-2);font:var(--core-human-1)}
+.core .tm-warn{color:var(--core-text-2);font:var(--core-human-2)}
+.core .tm-warnt,.core .tm-noseat{color:var(--core-warn)}
+.core .tm-noseat{font:var(--core-human-1)}
+.core .tm-row{display:flex;align-items:center;gap:var(--core-s-2)}
+.core .tm-acts{display:flex;flex-wrap:wrap;gap:var(--core-s-2);margin-top:var(--core-s-1)}
+.core .tm-inp{flex:1}
+.core .tm-linkrow{margin-top:0}
+.core .tm-step{gap:var(--core-s-15);flex-wrap:wrap}
+.core .tm-step button{display:grid;place-items:center;width:var(--core-h-md);height:var(--core-h-md);border-radius:var(--core-r-sm);background:var(--core-fill-2);box-shadow:var(--dlg-edge-2);color:var(--core-text);font:var(--core-machine-3);transition:background-color var(--core-dur-1) linear}
+@media (hover:hover){.core .tm-step button:hover{background:var(--core-fill-3)}}
+.core .tm-step input{width:72px;height:var(--core-h-md);padding:0 var(--core-s-15);border:1px solid var(--core-line-2);border-radius:var(--core-r-sm);background:var(--core-well);color:var(--core-text);font:var(--core-machine-3);font-weight:var(--core-w-2);text-align:center;font-variant-numeric:tabular-nums;outline:2px solid transparent}
+.core .tm-step input:focus{border-color:var(--core-focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--core-focus) 18%,transparent)}
+.core .tm-step .tm-meta{margin-left:var(--core-s-2)}
+.core .tm-seg{display:flex;width:max-content}
+.core .tm-paym{margin-top:var(--core-s-05)}
+.core .tm-sum{padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-sm);color:var(--core-text);font:var(--core-human-2)}
+.core .tm-off{color:var(--core-text);font:var(--core-machine-2);font-weight:var(--core-w-2)}
+.core .tm-tot{margin-top:var(--core-s-15);color:var(--core-text);font:var(--core-machine-4);font-weight:var(--core-w-2);font-variant-numeric:tabular-nums}
+.core .tm-tot s{margin-left:var(--core-s-2)}
+.core .tm-pay{align-self:flex-start;min-height:var(--core-h-lg);padding:0 var(--core-s-6)}
+.core .tm-link{align-self:flex-start;margin-left:calc(var(--core-s-2) * -1);text-decoration:underline;text-decoration-color:var(--core-text-3);text-underline-offset:3px}
+.core .tm-list{display:flex;flex-direction:column;margin-top:var(--core-s-1);border-top:1px solid var(--core-line)}
+.core .tm-who{display:flex;align-items:center;justify-content:space-between;gap:var(--core-s-2);min-height:var(--core-h-lg);border-bottom:1px solid var(--core-line);color:var(--core-text);font:var(--core-human-2)}
+.core .tm-who:last-child{border-bottom:0}
+.core .tm-who small{color:var(--core-text-3);font:var(--core-human-1)}
+@media (hover:hover){.core .tm-rm:hover{background:var(--core-bad-soft);color:var(--core-bad)}}
+/* приглашение к командному тарифу: строка в разделе «Тариф» и под тарифами */
+.core .tm-acc,.core .team-cta{display:flex;align-items:center;gap:var(--core-s-3);margin-top:var(--dlg-gap);padding:var(--core-s-3) var(--core-s-4)}
+.core .tm-acc-ic{flex:none;width:var(--core-icon-lg);height:var(--core-icon-lg);color:var(--core-text-2)}
+.core .tm-acc-tt{flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* ======================================================================================================
+   9. МЕНЮ МОДЕЛЕЙ — ближнее стекло, список малых ядер: у каждой модели своя форма, имя — машинным голосом
+   ====================================================================================================== */
+.core .menu{
+  position:absolute;right:0;bottom:calc(100% + var(--core-s-2));z-index:20;display:flex;flex-direction:column;width:300px;max-width:calc(100vw - 2 * var(--core-s-2));max-height:min(380px,calc(100dvh - 160px));
+  padding:var(--core-s-15);border-radius:var(--core-r-md);overflow:hidden;color:var(--core-text);font:var(--core-human-2);
+  opacity:0;visibility:hidden;pointer-events:none;transform:scale(.8);transform-origin:100% 100%;
+  transition:opacity var(--core-dur-1) linear,transform var(--core-dur-1) var(--core-ease-in),visibility 0s linear var(--core-dur-1);
+}
+.core .menu.open{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity var(--core-dur-2) linear,transform var(--core-dur-2) var(--core-ease-out),visibility 0s}
+.core .menu .core-menu__scroll{display:flex;flex-direction:column;gap:var(--core-s-05)}
+.core .opt{display:flex;align-items:center;gap:var(--core-s-3);flex:none;width:100%;min-height:44px;padding:var(--core-s-15) var(--core-s-2);border-radius:var(--core-r-sm);color:var(--core-text);text-align:left;transition:background-color var(--core-dur-1) linear}
+.core .opt>.core-mini{flex:none}
+.core .opt>div{flex:1;min-width:0}
+.core .opt b{display:flex;align-items:center;flex-wrap:wrap;gap:var(--core-s-05) var(--core-s-2);font:var(--core-machine-2);font-weight:var(--core-w-2);color:var(--core-text)}
+.core .opt small{display:block;margin-top:1px;font:var(--core-human-1);color:var(--core-text-3)}
+.core .opt b>:is(.cu-dot,.lockt,.ul-tag){order:2}
+.core .opt .ck{width:16px;height:16px;opacity:0;color:var(--core-text)}
+@media (hover:hover){.core button.opt:hover{background:var(--core-fill-2)}}
+.core button.opt:active{background:var(--core-fill-3)}
+.core .opt:focus-visible{outline-offset:-2px;background:var(--core-fill-2)}
+/* выбрана: свет и галочка */
+.core .opt.on{background:var(--core-fill-2)}
+.core .opt.on .ck{opacity:1}
+/* недоступна на текущем тарифе: имя гаснет, ядро тусклое, рядом — название нужного тарифа */
+.core .opt.locked b{color:var(--core-text-3)}
+.core .opt.locked>.core-mini{opacity:.4}
+/* состояние словами: «есть сбои» — рядом с именем; исправная модель лишней подписи не несёт */
+.core .cu-dot{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.core .cu-dot.bad{position:static;display:inline-flex;align-items:center;width:auto;height:auto;min-height:20px;margin:0;padding:0 var(--core-s-15);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-bad-soft);color:var(--core-bad);font:var(--core-machine-1);font-style:normal;clip-path:none}
+.core .opt-none{cursor:var(--core-cursor)}
+.core .cu-badges{display:inline-flex;flex-wrap:wrap;gap:var(--core-s-1);margin-top:var(--core-s-05)}
+.core .ul-tag{margin-left:0}
+.core .cu-scrim{position:fixed;inset:0;z-index:59;background:var(--core-scrim);opacity:0;pointer-events:none;transition:opacity var(--core-dur-3) linear}
+.core .cu-scrim.on{opacity:1;pointer-events:auto}
+
+/* ======================================================================================================
+   10. КАРТОЧКИ И ОБЪЯВЛЕНИЯ ПОВЕРХ СТРАНИЦЫ — ближнее стекло
+   ====================================================================================================== */
+/* «Установите Premier» */
+.core .pwa-card{position:fixed;right:var(--core-s-4);bottom:var(--core-s-4);z-index:60;display:flex;align-items:center;gap:var(--core-s-3);max-width:400px;padding:var(--core-s-3) var(--core-s-2) var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-lg);color:var(--core-text);font:var(--core-human-1)}
+.core .pwa-card img{flex:none;width:40px;height:40px;border-radius:var(--core-r-sm)}
+.core .pwa-txt{display:flex;flex-direction:column;gap:var(--core-s-05);min-width:0}
+.core .pwa-txt b{font:var(--core-human-2);font-weight:var(--core-w-3);color:var(--core-text)}
+.core .pwa-txt span{color:var(--core-text-2)}
+.core .pwa-act{display:flex;align-items:center;gap:var(--core-s-1);flex:none}
+.core .pwa-x{display:grid;place-items:center;flex:none;width:var(--core-h-md);height:var(--core-h-md);border-radius:var(--core-r-sm);color:var(--core-text-2);font:var(--core-human-4);line-height:1;transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core .pwa-x:hover{background:var(--core-fill-1);color:var(--core-text)}}
+@media (prefers-reduced-motion:no-preference){.core:not([data-core-motion=reduce]) .pwa-card,.core:not([data-core-motion=reduce]) .ann{animation:core-pop var(--core-dur-3) var(--core-ease-out) both}}
+/* объявление и техработы: полоса вверху по центру; знак слева говорит о роде сообщения */
+.core .ann{position:fixed;top:calc(var(--core-s-3) + env(safe-area-inset-top,0px));left:50%;z-index:1900;display:flex;align-items:center;gap:var(--core-s-3);width:max-content;max-width:min(720px,calc(100vw - 2 * var(--core-s-3)));min-height:44px;margin:0;padding:var(--core-s-1) var(--core-s-2) var(--core-s-1) var(--core-s-4);border-radius:var(--core-r-lg);color:var(--core-text);font:var(--core-human-2);translate:-50% 0}
+.core .ann-mark{flex:none;width:8px;height:8px;border-radius:50%;background:var(--core-text-2)}
+.core .ann[data-kind=warn] .ann-mark{background:var(--core-warn)}
+.core .ann[data-kind=success] .ann-mark{background:var(--core-ok)}
+.core .ann[data-kind=maint] .ann-mark{background:var(--core-bad)}
+.core .ann-tx{flex:1;min-width:0;padding:var(--core-s-2) 0;overflow-wrap:anywhere}
+.core .ann-tx a{margin-left:var(--core-s-1);color:var(--core-text);font-weight:var(--core-w-2);white-space:nowrap;text-decoration:underline;text-decoration-color:var(--core-text-3);text-underline-offset:3px}
+.core .ann:not(:has(.ann-x)){padding-right:var(--core-s-4)}
+/* уведомления встают под объявлением, а не поверх него */
+.core:has(body>.ann) .core-toasts{top:calc(var(--core-s-3) + 44px + var(--core-s-2) + env(safe-area-inset-top,0px))}
+/* уведомление: длинный текст переносится, тон читается и без цвета (знак меняет форму) */
+.core .core-toast[data-tone=bad] .core-toast__mark{width:12px;height:12px;border-radius:0;-webkit-mask:var(--core-glyph-close) center/contain no-repeat;mask:var(--core-glyph-close) center/contain no-repeat}
+.core .core-toast[data-tone=ok] .core-toast__mark{width:12px;height:12px;border-radius:0;-webkit-mask:var(--core-glyph-check) center/contain no-repeat;mask:var(--core-glyph-check) center/contain no-repeat}
+
+/* картинка в полный размер: окно по размеру картинки; сама картинка — на плотном стекле, без рамок поверх неё */
+.core .zoom .zoom-pane{width:auto;min-width:min(320px,100%);max-width:min(1200px,100%)}
+.core .zoom-head{padding-left:var(--core-s-5)}
+.core .zoom-name{flex:1;min-width:0;margin-right:auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--core-text-2);font:var(--core-machine-2)}
+.core .zoom-stage{display:grid;place-items:center;min-height:0;padding:0 var(--core-s-2) var(--core-s-2)}
+.core .zoom-stage img{display:block;max-width:100%;max-height:calc(100dvh - 2 * var(--core-s-6) - 56px - var(--core-s-2));border-radius:var(--core-r-md);background:var(--core-glass-dense);object-fit:contain;cursor:var(--core-cursor-action)}
+
+/* ======================================================================================================
+   11. ТЕЛЕФОН И УЗКИЕ ОКНА. Окно — лист снизу (core-components.css, до 600 px): над клавиатурой, с безопасными зонами
+   ====================================================================================================== */
+@media (max-width:860px){
+  /* меню моделей — лист снизу (тот же порог, что у mobile() в скриптах: под ним включается затемнение .cu-scrim) */
+  .core #menu{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:60;width:auto;max-width:none;max-height:72dvh;padding:var(--core-s-2) var(--core-s-2) calc(var(--core-s-2) + env(safe-area-inset-bottom,0px));border-radius:var(--core-r-lg) var(--core-r-lg) 0 0;transform:translateY(100%);transform-origin:50% 100%;opacity:1;transition:transform var(--core-dur-2) var(--core-ease-in),visibility 0s linear var(--core-dur-2)}
+  .core #menu.open{transform:none;transition:transform var(--core-dur-3) var(--core-ease-out),visibility 0s}
+  .core #menu::before{content:"";flex:none;width:36px;height:4px;margin:var(--core-s-1) auto var(--core-s-2);border-radius:2px;background:var(--core-line-2)}
+  .core #menu .opt{min-height:52px;padding:var(--core-s-2) var(--core-s-3)}
+}
+@media (max-width:760px){
+  .core .plans,.core .plans.n4{grid-template-columns:1fr}
+  .core .plan,.core .plan.fwd,.core .plans:not([data-sel]) .plan.hot{transform:none}
+  .core .plans:has(.gw-tr) .plan:not(:has(.gw-tr))::after{content:none}
+  .core .plan .price:not(:has(s))::before{content:none}
+  .core .pm-per{width:100%}
+  .core .ulw-packs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .core .ulw-own{grid-column:1 / -1;flex-direction:row;align-items:center}
+  .core .ulw-own .ulw-step{align-self:center}
+  .core .ulw-pack .tag{position:static;order:-1;margin:0 0 var(--core-s-15)}
+  .core .ulw-pack .e .lg{display:none}
+  .core .ulw-pack .e .sm{display:flex;justify-content:space-between;gap:var(--core-s-15)}
+  .core .ulw-bal{grid-template-columns:1fr;gap:var(--core-s-2)}
+  .core .ulw-bar{grid-row:2}
+  .core .ulw-row{flex-direction:column;align-items:stretch;gap:var(--core-s-3)}
+  .core .ulw-buy{width:100%;min-width:0;margin-left:0}
+  .core .ulw-rules summary small{display:none}
+  .core .ulw-rules p{padding-left:var(--core-s-4)}
+  .core .api-steps{grid-template-columns:1fr}
+  .core .gw-trial{grid-template-columns:1fr}
+  .core .gw-trial .btn{grid-column:1;grid-row:auto;width:100%}
+}
+@media (max-width:600px){
+  /* лист поднимается над экранной клавиатурой там, где браузер сам страницу не сжимает (iOS): высоту клавиатуры пишет скрипт */
+  .core :is(.modal,.ulw){padding-bottom:var(--dlg-kb)}
+  .core :is(.modal,.ulw) :is(.dlg,.ulw-dlg){max-height:calc(92dvh - var(--dlg-kb))}
+  /* настройки аккаунта: разделы — лента наверху листа, лист постоянной высоты */
+  .core .modal .dlg.accdlg{height:calc(92dvh - var(--dlg-kb))}
+  .core .dlg.accdlg .dbody{padding:0}
+  .core .acc{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .core .acc-nav{flex-direction:row;gap:var(--core-s-1);padding:0 var(--core-s-5) var(--core-s-2);border-right:0;border-bottom:1px solid var(--core-line);overflow-x:auto;overflow-y:hidden}
+  .core .acc-nav button{min-height:var(--core-hit);padding:0 var(--core-s-3)}
+  .core .acc-body{padding:var(--core-s-4) var(--core-s-5) var(--core-s-6)}
+  .core .acc-row,.core .tm-row,.core .tm-acc,.core .team-cta{flex-wrap:wrap}
+  .core .tfa-setup{flex-direction:column;align-items:center}
+  .core .tfa-form input{flex:1;width:auto;min-width:0}
+  .core .tm-linkrow code{flex-basis:100%}
+  .core .tm-pay{align-self:stretch}
+  .core .mst-head,.core .mst-row{grid-template-columns:minmax(0,1.5fr) 72px}
+  .core .mst-head span:nth-child(3),.core .mst-cell:last-child{display:none}
+  .core .rc-tiers{grid-template-columns:1fr}
+  .core .promo input{flex:1;width:auto;min-width:0}
+  .core .ulw-foot{padding:var(--core-s-4) var(--core-s-5) calc(var(--core-s-4) + env(safe-area-inset-bottom,0px))}
+  .core .zoom-stage img{max-height:calc(92dvh - 56px - var(--core-s-2) - env(safe-area-inset-bottom,0px))}
+  .core .ulw-dlg{padding-bottom:0!important}
+  .core :is(.btns,.acc-bts,.gw-sh .gw-acts)>.btn{flex:1 1 auto}
+  .core .pwa-card{left:var(--core-s-2);right:var(--core-s-2);bottom:calc(var(--core-s-2) + env(safe-area-inset-bottom,0px));max-width:none}
+}
+@media (pointer:coarse),(max-width:600px){
+  /* цели касания не меньше 44 px; поля — 16 px, чтобы iOS не приближал страницу */
+  .core :where(.btn,.tm-btn){min-height:var(--core-hit)}
+  .core :where(.field input,.field textarea,.field select,.promo input,.gw-sh input,.tm-inp,.tfa-form input,.tm-step input,.ulw-step input){min-height:var(--core-hit);font-size:1rem}
+  .core :where(.seg,.pm-per,.vrate,.ulw-seg,.tm-seg)>button{min-height:calc(var(--core-hit) - 2 * var(--core-s-05))}
+  .core :where(.gw-tr,.tm-link,.tm-rm,.api-ccopy,.ulw-back,.kn-del){min-height:var(--core-hit)}
+  .core :where(.check,.lm-sw){min-height:var(--core-hit);align-items:center}
+  .core :where(.check,.lm-sw) input{width:44px;height:26px}
+  .core :where(.check,.lm-sw) input::before{left:4px;top:4px;width:18px;height:18px}
+  .core :where(.check,.lm-sw) input:checked::before{transform:translateX(18px) rotate(0deg) scale(1)}
+  .core .pwa-x,.core .ulw-step button,.core .tm-step button{width:var(--core-hit);height:var(--core-hit)}
+  .core .ulw-step input,.core .tm-step input{height:var(--core-hit)}
+}
