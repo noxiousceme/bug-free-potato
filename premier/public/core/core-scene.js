@@ -369,7 +369,10 @@
     '  fade=mix(1.0,smoothstep(0.0,0.07,u)*(1.0-pow(u,2.4))*1.9,uFlow.x);',
     ' }',
     // проекция: ближние точки крупнее и ярче; вне плоскости резкости — мягче и тусклее
-    ' float k=1.0/(1.0-v.z*uPt.w);',
+    // в полёте (uFlow.w) камера входит в облако: точки за её плоскостью не рисуются
+    ' float kk=1.0-v.z*uPt.w;',
+    ' if(kk<0.07){gl_Position=vec4(2.0,2.0,0.0,1.0);gl_PointSize=0.0;vCol=vec4(0.0);vSoft=0.0;return;}',
+    ' float k=1.0/kk;',
     ' gl_Position=vec4(uGeo.xy+v.xy*uGeo.zw*k,0.0,1.0);',
     // яркость точек распределена неравномерно: немногие яркие искры и много тусклой пыли — так облако искрится, а не сереет
     // на бумаге иначе: тушь не светится, поэтому точки почти одинаково плотные, а различаются размером — как в гравюре пунктиром
@@ -382,6 +385,9 @@
     ' float a=uPt.z*mix(lit,0.42+0.58*lit,pap)*(0.26+0.74*depth*depth)*pow(base/(base+coc),1.5)*mix(1.0,0.5,vSoft)',
     '  *(0.84+0.16*sin(uPh.w*(1.0+floor(aSeed.y*3.0))+aSeed.z*6.2831853))',
     '  *(1.0+band*1.4+rw*0.5)*(1.0-0.45*uFx.x)*fade*mix(1.0,0.75,smoothstep(2.2,4.0,h)*(1.0-pap));',   // белое каление светит сильнее — берём его чуть меньше
+    // в полёте ближняя точка растёт в мягкий диск, а света в ней остаётся столько же: яркость падает с площадью,
+    // у самой камеры диск гаснет — предел яркости (12.10) держится на любой глубине
+    ' if(uFlow.w>0.5){a*=smoothstep(0.07,0.3,kk)*min(1.0,2.56/(k*k));size=min(size,128.0);}',
     ' a=min(a,1.3);if(size<1.5){a*=size*size/2.25;size=1.5;}',
     ' gl_PointSize=size;vCol=vec4(c,a);',
     '}'
@@ -490,6 +496,9 @@
   // Core.lit(k): насколько ярким Ядро остаётся под окном (0 — как обычно, 1 — почти как в покое). Меняется только яркость:
   // накал и форма отступившего Ядра те же, поэтому расчёт предела яркости (12.10) остаётся в силе — потолок ниже яркости покоя.
   var lit = 0, LIT = 0.9;
+  // Core.flight(pose): камера по прокрутке. Поза применяется сразу, без пружин: положение, размер, поворот и глубина
+  // (насколько камера вошла в облако). Пока полёт включён, место (place) только задаёт свет на кромках.
+  var fly = null;
   var S = { x: sp(0), y: sp(0), lr: sp(5), gx: sp(0), gy: sp(0), glr: sp(5), gain: sp(1), aura: sp(1), lift: sp(0), scale: sp(1), ball: sp(0), heat: sp(0.48), bright: sp(1), spin: sp(0.07), breath: sp(0.03), turb: sp(1),
     pulse: sp(0), lean: sp(0), flow: sp(0), go: sp(1), view: sp(0.24), norm: sp(1), scatter: sp(0), flash: sp(0), kick: sp(0), ptr: sp(0), px: sp(0), py: sp(0), tx: sp(0), ty: sp(0) };
   var ph = { spin: 0, a: 0, b: 0, breath: 0, tw: 0, pulse: 0, flow: 0, dir: 0 };
@@ -642,13 +651,16 @@
   var M3 = new Float32Array(9);
   function draw(now) {
     var gl = G.gl; if (!gl || G.lost || !G.bFrom) return;
-    var u = G.u, t = TIERS[q.id], paper = theme.paper, n = Math.min(t.n, G.cap), W = view.w, CH = view.ch, R = Math.exp(S.lr.x), rr = R * S.scale.x, dpr = G.w / W;
-    var cx = S.x.x, cy = S.y.x - S.lift.x * R * (1 - S.scale.x);
+    var F = fly && !reduced && !focus ? flyGeo() : null;
+    var u = G.u, t = TIERS[q.id], paper = theme.paper, n = Math.min(t.n, G.cap), W = view.w, CH = view.ch, R = F ? F.r : Math.exp(S.lr.x), rr = R * S.scale.x, dpr = G.w / W;
+    var cx = F ? F.x : S.x.x, cy = F ? F.y : S.y.x - S.lift.x * R * (1 - S.scale.x);
     var geoU = [cx / W * 2 - 1, 1 - cy / CH * 2, rr / W * 2, rr / CH * 2];
     // яркость на площадь не зависит от числа точек, плотности пикселей и размера Ядра — поэтому предел яркости один для всех устройств
     var sz = clamp(Math.sqrt(R / RREF), 0.8, 1.7) * Math.pow(NREF / n, 0.25), dens = (NREF / n) * (R * R) / (RREF * RREF) / (sz * sz) * S.scale.x * S.scale.x;
-    var alpha = clamp((paper ? A_PAPER : A_DARK) * S.gain.x * S.bright.x * dens / Math.max(S.norm.x, 0.02) * flashGain(rr), 0, paper ? 2.4 : 4);
-    var heat = clamp(S.heat.x, 0, 1), c = Math.cos(ph.spin), s = Math.sin(ph.spin), vb = S.view.x + 0.05 * Math.sin(ph.b), cb = Math.cos(vb), sb = Math.sin(vb);
+    // в полёте размер меняется вместе с прокруткой, поэтому оценка плотного места берётся сразу для этого размера, без пружины
+    var norm = F ? (expoL || relight(), expoL ? expoAt(expoL, rr) : 1) : S.norm.x, gain = F ? F.gain : S.gain.x;
+    var alpha = clamp((paper ? A_PAPER : A_DARK) * gain * S.bright.x * dens / Math.max(norm, 0.02) * flashGain(rr), 0, paper ? 2.4 : 4);
+    var spin = ph.spin + (F ? F.yaw : 0), heat = clamp(S.heat.x, 0, 1), c = Math.cos(spin), s = Math.sin(spin), vb = S.view.x + 0.05 * Math.sin(ph.b) + (F ? F.pitch : 0), cb = Math.cos(vb), sb = Math.sin(vb);
     gl.viewport(0, 0, G.w, G.h);
     gl.clearColor(theme.scene[0], theme.scene[1], theme.scene[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
     if (paper) gl.blendFunc(gl.DST_COLOR, gl.ZERO); else gl.blendFunc(gl.ONE, gl.ONE);
@@ -665,9 +677,10 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, G.bTo); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, G.bSeed); gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
     M3[0] = c; M3[1] = sb * s; M3[2] = -cb * s; M3[3] = 0; M3[4] = cb; M3[5] = sb; M3[6] = s; M3[7] = -sb * c; M3[8] = cb * c;
+    if (F && F.roll) { var cr = Math.cos(F.roll), sr = Math.sin(F.roll), mi, mx; for (mi = 0; mi < 9; mi += 3) { mx = M3[mi]; M3[mi] = cr * mx - sr * M3[mi + 1]; M3[mi + 1] = sr * mx + cr * M3[mi + 1]; } }
     gl.uniformMatrix3fv(u.uRot, false, M3);
     gl.uniform4f(u.uGeo, geoU[0], geoU[1], geoU[2], geoU[3]);
-    gl.uniform4f(u.uPt, (paper ? 2.2 : 2.8) * sz * dpr, (paper ? 1.6 : 4) * sz * dpr, alpha, 0.26);
+    gl.uniform4f(u.uPt, (paper ? 2.2 : 2.8) * sz * dpr, (paper ? 1.6 : 4) * sz * dpr, alpha, 0.26 + (F ? F.depth : 0));
     gl.uniform4f(u.uPose, morph.t, S.ball.x, S.turb.x, S.breath.x);
     gl.uniform4f(u.uPh, ph.a, ph.b, ph.breath, ph.tw);
     gl.uniform4f(u.uHeat, heat, S.pulse.x, ph.pulse, S.flash.x);
@@ -681,7 +694,7 @@
     gl.uniform4f(u.uPtr, (S.px.x - cx) / rr, -(S.py.x - cy) / rr, S.ptr.x * 14 / (sg * rr), 1 / (sg * sg));
     var rip = fx.rip, age = rip ? clamp((now - rip.t) / 1600, 0, 1) : 1;
     if (rip) gl.uniform4f(u.uRip, (rip.x - cx) / rr, -(rip.y - cy) / rr, (40 + 560 * (1 - (1 - age) * (1 - age))) / rr, (1 - age) * (1 - age) * 0.9); else gl.uniform4f(u.uRip, 0, 0, 0, 0);
-    gl.uniform4f(u.uFlow, S.flow.x, ph.flow, clamp(46 / rr, 0.05, 0.25), 0);
+    gl.uniform4f(u.uFlow, S.flow.x, ph.flow, clamp(46 / rr, 0.05, 0.25), F ? 1 : 0);
     var rp = theme.ramp;
     gl.uniform3f(u.uC0, rp[0][0], rp[0][1], rp[0][2]); gl.uniform3f(u.uC1, rp[1][0], rp[1][1], rp[1][2]); gl.uniform3f(u.uC2, rp[2][0], rp[2][1], rp[2][2]); gl.uniform3f(u.uC3, rp[3][0], rp[3][1], rp[3][2]); gl.uniform3f(u.uC4, rp[4][0], rp[4][1], rp[4][2]);
     gl.uniform1f(u.uPaper, paper ? 1 : 0);
@@ -709,6 +722,27 @@
     loop.on = true; loop.step = 0; loop.draw = 0; loop.busy = true; q.warm = 15; q.frames = q.late = 0; loop.id = raf(tick);
   }
   function stop() { if (loop.id && win.cancelAnimationFrame) win.cancelAnimationFrame(loop.id); clearTimeout(loop.timer); loop.id = loop.timer = 0; loop.on = false; }
+  // Кадр полёта рисуется сразу, в том же кадре браузера, где страница сдвинулась: Ядро не отстаёт от прокрутки.
+  // Частота — как у обычного движения на этой ступени качества; общий цикл этот кадр уже не повторяет.
+  function flyFrame() {
+    loop.dirty = true;
+    if (mode !== 'live' || hidden || G.lost || reduced || slow || focus || !G.bFrom) return wake();
+    var now = performance.now(), gap = 1000 / TIERS[q.id].act;
+    if (loop.draw && now - loop.draw < gap * 0.62) return wake();
+    var dt = loop.step ? clamp((now - loop.step) / 1000, 0, 0.1) : 0; loop.step = now;
+    step(dt, now); draw(now); measure(now, gap); loop.dirty = false; wake();
+  }
+  // поза хранится в долях окна и переводится в пиксели на каждом кадре: смена размера окна её не ломает
+  function flyGeo() { fly.x = view.w * fly.ux / 100; fly.y = view.h * fly.uy / 100; fly.r = Math.max(40, Math.min(view.w, view.h) * fly.us); return fly; }
+  function setFlight(o) {
+    if (!o) {   // полёт окончен: пружины места подхватывают Ядро там, где его оставила камера
+      if (fly) { flyGeo(); S.x.x = S.gx.x = fly.x; S.y.x = S.gy.x = fly.y; S.lr.x = S.glr.x = Math.log(fly.r); S.gain.x = fly.gain; fly = null; loop.dirty = loop.busy = true; wake(); }
+      return;
+    }
+    var n = function (v, d) { v = +v; return isFinite(v) ? v : d; };
+    fly = { ux: n(o.x, 50), uy: n(o.y, 50), us: n(o.size, 0.3), x: 0, y: 0, r: 0, yaw: n(o.yaw, 0), pitch: n(o.pitch, 0), roll: n(o.roll, 0), depth: clamp(n(o.depth, 0), 0, 1.2), gain: clamp(n(o.gain, 1), 0, 1) };
+    flyFrame();
+  }
   // Ядро само меряет время кадра. Если из 50 кадров 20 опоздали — ступень качества вниз (меньше точек и пикселей).
   // Не помогло и на самой низкой — остаётся неподвижный кадр. Выбор запоминается на сутки.
   function measure(now, gap) {
@@ -841,7 +875,7 @@
     var now = performance.now(), n = 0, i, t = TIERS[q.id];
     for (i = 0; i < loop.stamps.length; i++) if (now - loop.stamps[i] <= 1000) n++;
     return { mode: mode, reason: reason, state: want.state, shown: cur.state, place: typeof want.place === 'string' ? want.place : 'custom', form: want.form.form, model: want.form.model,
-      quality: q.id, auto: q.auto, points: mode === 'live' ? Math.min(t.n, G.cap) : 0, width: G.w, height: G.h, fps: n, ms: Math.round(loop.ms * 10) / 10, still: reduced || slow, slow: slow };
+      quality: q.id, auto: q.auto, points: mode === 'live' ? Math.min(t.n, G.cap) : 0, width: G.w, height: G.h, fps: n, ms: Math.round(loop.ms * 10) / 10, still: reduced || slow, slow: slow, flight: !!fly };
   }
 
   /* ═══ 9. Связь со страницей: видимость вкладки, «уменьшить движение», тема, окно поверх, указатель ═══ */
@@ -858,7 +892,7 @@
     focus = root.hasAttribute('data-core-focus');
     root.addEventListener('core:focus', function (e) { focus = !!(e.detail && e.detail.on); apply(); });
     // указатель: точки чуть подаются к курсору, нажатие пускает одну волну. Только для мыши и пера; ничего не читает из разметки.
-    function close(x, y) { var rr = Math.exp(S.lr.x) * S.scale.x * 1.6 + 160, dx = x - S.x.x, dy = y - S.y.x; return dx * dx + dy * dy < rr * rr; }
+    function close(x, y) { var rr = (fly ? flyGeo().r : Math.exp(S.lr.x)) * S.scale.x * 1.6 + 160, dx = x - (fly ? fly.x : S.x.x), dy = y - (fly ? fly.y : S.y.x); return dx * dx + dy * dy < rr * rr; }
     function calm() { return mode !== 'live' || reduced || slow || !STATES[cur.state].go || cur.state === 'receded'; }
     win.addEventListener('pointermove', function (e) {
       if (e.pointerType === 'touch') return;
@@ -925,6 +959,8 @@
     place: function (p) { if (p == null) return typeof want.place === 'string' ? want.place : { x: want.place.x, y: want.place.y, size: want.place.size }; setPlace(p); return this; },
     target: function (t, o) { setTarget(t, o); return this; },
     stage: function (o) { if (o == null) return { left: stg.l, right: stg.r, top: stg.t, bottom: stg.b }; setStage(o); return this; },
+    // камера по прокрутке: { x, y (% окна), size (доля меньшей стороны), yaw, pitch, roll (рад), depth (0…1.2), gain (0…1) }; null — выключить
+    flight: function (o) { if (o === undefined) return !!fly; setFlight(o); return this; },
     quality: function (v) { if (v == null) return q.auto ? 'auto' : q.id; setQuality(v); return this; },
     info: info,
     formOf: function (name) { var f = formOf(name); return { form: f.form, variant: f.v.slice() }; },

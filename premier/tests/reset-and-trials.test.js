@@ -327,7 +327,9 @@ test('статика: окно тарифов, лендинг и панель з
   for (const p of ['public/js/13-billing.js', 'public/en/js/13-billing.js']) { const s = read(p); assert.match(s, /\/\^trial\/\.test\(id\)/); assert.match(s, /growthTrialLink\(p\)/); assert.match(s, /BILL\.resetMsgs/); }
   const g = read('public/js/15-growth.js'); assert.match(g, /function growthTrialLink\(p\)/); assert.match(g, /data-buy="trial:\$\{esc\(p\.id\)\}"/);
   for (const p of ['public/index.html', 'public/en/index.html']) { const s = read(p); assert.match(s, /class="tier-trial"/); assert.match(s, /offers\.trials/); }
-  assert.match(read('public/landing.css'), /\.tier \.tier-trial/); assert.match(read('public/growth.css'), /\.plan \.gw-tr/);
+  // вид ссылки пробного периода — в новой системе: лендинг (шаг 6) и окно тарифов чата (шаг 5); старые landing.css и growth.css страницы больше не подключают
+  assert.match(read('public/core/core-site.css'), /\.tier \.tier-trial/); assert.match(read('public/core/core-dialogs.css'), /\.plan \.gw-tr/);
+  for (const p of ['public/index.html', 'public/en/index.html']) assert.match(read(p), /\/core\/core-site\.css\?v=\d+/, p + ': стили плит тарифов подключены');
   const panel = read('public/admin/v-legacy.js'); assert.match(panel, /name="resetPrice"/); assert.match(panel, /name="resetMsgs"/); assert.match(panel, /Пробные тарифы/); assert.match(panel, /resetMargin/);
   for (const p of ['public/chat.html', 'public/en/chat.html']) assert.doesNotMatch(read(p), /(Обнуляет дневные счётчики|Zeros today's counters)/);
   for (const p of ['public/js/19-limits.js', 'public/js/13-billing.js']) assert.doesNotMatch(read(p), /Сброс обнуляет счётчики/);

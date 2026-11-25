@@ -13,7 +13,10 @@ test('index и chat (RU/EN): большие стили вынесены в фа�
   for (const p of ['public/index.html', 'public/en/index.html', 'public/chat.html', 'public/en/chat.html']) {
     const html = read(p);
     for (const m of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) assert.ok(m[1].length <= 2000, p + ': встроенный <style> больше 2000 символов');
-    for (const m of html.matchAll(/href="(\/css\/[^"?]+)\?v=\d+"/g)) assert.ok(fs.existsSync(path.join(root, 'public', m[1])), p + ': нет файла ' + m[1]);
+    // с шага 6 главная подключает стили Core из /core/ (раньше — из /css/): проверяется каждый подключённый файл стилей
+    const sheets = [...html.matchAll(/<link rel="stylesheet" href="(\/[^"?]+)\?v=\d+"/g)].map((m) => m[1]);
+    assert.ok(sheets.length >= 4, p + ': стили подключены файлами с версией');
+    for (const s of sheets) assert.ok(fs.existsSync(path.join(root, 'public', s)), p + ': нет файла ' + s);
   }
 });
 
