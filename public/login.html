@@ -52,6 +52,12 @@ if (!window.GOOGLE && !window.GITHUB) { off('gbtn'); off('ghbtn'); $('err').text
 else { if (!window.GOOGLE) $('gbtn').hidden = true; if (!window.GITHUB) $('ghbtn').hidden = true; if (!window.REG) $('note').textContent = 'Новые аккаунты сейчас не создаются — войти могут только существующие пользователи.'; }
 $('gbtn').onclick = () => { if (!window.GOOGLE) return; $('gbtn').style.opacity = .7; $('gtxt').textContent = 'Открываем Google…'; };
 $('ghbtn').onclick = () => { if (!window.GITHUB) return; $('ghbtn').style.opacity = .7; $('ghtxt').textContent = 'Открываем GitHub…'; };
+// вход через Google/GitHub выполнен (сервер прислал сюда и поставил window.IN): плита говорит об этом, core-login.js показывает полёт и открывает чат
+if (window.IN) {
+  history.replaceState(null, '', '/login');
+  document.querySelector('.card').innerHTML = '<h1>Вход выполнен</h1><p class="sub" role="status">Открываем чат…</p>';
+  window.premierIn = () => location.replace('/chat');
+}
 // второй шаг входа (2FA): сервер после Google/GitHub присылает сюда с куки premier_2fa — вводим код из приложения или резервный
 if (STEP2) {
   history.replaceState(null, '', '/login');

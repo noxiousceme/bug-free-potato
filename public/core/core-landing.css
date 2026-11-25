@@ -221,6 +221,8 @@ section { padding: var(--lp-gap) 0 0; scroll-margin-top: var(--core-s-16); }
 .offer-strip .btn.pri:hover { background: var(--core-fill-3); }
 .tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--core-s-3); margin-top: var(--core-s-6); text-align: left; align-items: stretch; }
 .tiers.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* без скриптов плиты приходят с сервера внутри <noscript>: сетке нужны сами плиты, а не обёртка */
+.tiers > noscript { display: contents; }
 .tier { position: relative; display: flex; flex-direction: column; gap: var(--core-s-3); min-width: 0; padding: var(--core-s-5); }
 /* глубина по порядку тарифов: чем выше тариф, тем светлее грань; рекомендованный — впереди */
 .tier:nth-child(n+2) { box-shadow: inset 0 0 0 1px var(--core-line-2); }

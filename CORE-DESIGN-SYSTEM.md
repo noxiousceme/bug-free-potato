@@ -6,7 +6,7 @@ It is written for someone who has only this file and the files it names.
 - Showcase (every token and component, live): `/core/showcase.html`
 - The chat screen (`public/chat.html` and its English mirror) is the first product page on the system. Every other page still has the old look and loads none of these files.
 - Step 1 built the foundation (sections 1–11). Step 2 built the Core, the 3D scene behind the interface (section 12). Step 3 moved the chat screen to the system (section 13) and added two small things to the foundation: `Core.stage()` (12.5) and `CoreUI.light.scope()` (section 5). Step 4 moved everything the AI makes and does: the result window, the work log, code blocks, result cards and media, the cloud computer, folder and helper (section 14), and added two palettes to the tokens: syntax (14.4) and terminal (14.5).
-- The guarantees below are checked by `tests/core-foundation.test.js`, `tests/core-scene.test.js`, `tests/core-chat.test.js` and `tests/core-work.test.js` (`npm test`).
+- The guarantees below are checked by `tests/core-foundation.test.js`, `tests/core-scene.test.js`, `tests/core-chat.test.js`, `tests/core-work.test.js` and `tests/core-landing.test.js` (`npm test`).
 
 ---
 
@@ -1145,7 +1145,8 @@ Three pages a visitor sees before the product: the landing (`public/index.html`,
 - Depth by role. Header: near glass (`data-core-at="top"`). Section panes, the hero copy panel, the hero facts panel and the footer: far glass. The demo frame, the closing card, the login plate and the trial plate: mid glass.
 - A long page is built from **panes and plates**. Each section's `.wrap` is one far-glass pane (`.pane`). Cards inside it (`.feat`, `.tier`, `.faq-item`, `.rv-card`, `.offer-strip`, `.team-strip`) are plates: `--core-fill-1` with a 1 px inset line, no blur. This is the step 5 plans-window pattern, and it means one blurred surface per section instead of one per card.
 - **All text sits on glass.** No text is placed straight on the scene (rule 5). The headline has its own far panel (`.hero-copy`); section headings sit inside their pane.
-- On phones (up to 720 px) the far panes, the header and the footer are opaque (`--_backdrop: none; --_fill: var(--core-solid-far)`), and the demo frame and closing card use `--core-solid-mid`. A large blurred surface over a moving Core is too expensive there. The Core shows above the first screen and in the gaps between sections.
+- On phones (up to 720 px) the far panes, the header and the footer are opaque (`--_backdrop: none; --_fill: var(--core-solid-far)`), and the demo frame and closing card use `--core-solid-mid`. A large blurred surface over a moving Core is too expensive there. The Core shows above the first screen, in the gaps between sections and above the closing plate.
+- **Phone header.** The way into the product stays in the header at every width ("Open Premier"). Up to 480 px the Telegram link leaves the header (it is in the closing plate); up to 382 px only the mark remains of the brand, the name is on the button. The language buttons look 36 px high and have a 44 px touch area (`.language-switch a::after`).
 
 ### 16.2 Loading and first paint
 
@@ -1155,36 +1156,42 @@ Three pages a visitor sees before the product: the landing (`public/index.html`,
 - Nothing shifts when the Core or late data arrive. Late content has its space reserved: the hero offer line keeps its height while hidden (`.hero-offer[hidden]`). The only shifts measured come from the web font swapping in during the first 0.4 s.
 - Font preloads match the language: Russian pages preload the Cyrillic Onest subset, English pages the Latin one. The trial page also preloads Latin Onest and Latin JetBrains Mono (the headline starts with "Pro", the timer is digits).
 - `theme-color` is the scene colour, as in the chat (`#0B0A08` dark, `#F1ECE3` light).
-- Without scripts the landing shows the headline, lead, buttons, feature cards, FAQ (`<details>`) and footer. Pricing plates are built by script from `/api/plans`, so that area is empty with scripts off; this predates step 6 and needs server rendering.
+- Without scripts the landing shows the headline, lead, buttons, feature cards, pricing, FAQ (`<details>`) and footer. Pricing plates are built by script from `/api/plans`, so for a page without scripts the server puts a short copy of them into `<noscript>` inside `#tiers`: name, description, the price for one term, three limits and the button (`seo.plansTag`, called from `seo.landing`; 16.9). `.tiers > noscript { display: contents }` lets the grid lay out the plates themselves. With scripts on the copy is never parsed or shown, and the script replaces it. The period switch, offers and the model lists need scripts.
 - Without WebGL the scene falls back to its CSS glow; the pages are otherwise unchanged.
 
 ### 16.3 The scroll flight (landing)
 
-`core-landing.js` holds keyframes per section: x and y as fractions of the window, radius as a fraction of the shorter side, brightness, and two angles (`turn`, `tilt`, radians). Each section meets the Core from its own side, distance and angle.
+The path is one camera move through the Core, tied to the scroll position. At the top the visitor sees the whole Core beside the headline. On the way down the camera enters the cloud and travels through it: each section is passed at its own distance and angle, with the Core larger than the window, so the points drift past the panes instead of a small ball sitting at the page edge behind them. At the end the camera comes out, and the whole Core is seen again in the gap above the closing plate. Over the page the Core makes exactly one full turn (`turn` goes from 0 to 2π).
+
+`core-landing.js` holds the keyframes per section: x and y as fractions of the window, radius as a fraction of the shorter side (above about 0.7 the Core is larger than the window and the camera is inside it), brightness, and two angles (`turn`, `tilt`, radians).
 
 | Section | Wide (≥ 960 px): x, y, r, gain, turn, tilt | Narrow: x, y, r, gain (angles as wide) |
 | --- | --- | --- |
-| hero | 0.77, 0.36, 0.30, 1, 0, 0 | 0.80, 0.09, 0.26, 1 |
-| features | 0.04, 0.52, 0.36, 0.8, 1.1, 0.30 | 0.08, 0.50, 0.50, 0.7 |
-| pricing | 0.97, 0.44, 0.40, 0.75, 2.3, −0.24 | 0.92, 0.50, 0.50, 0.65 |
-| reviews | 0.50, 1.04, 0.56, 0.7, 3.3, 0.50 | 0.50, 0.96, 0.60, 0.6 |
-| FAQ | 0.03, 0.34, 0.32, 0.7, 4.3, −0.16 | 0.08, 0.40, 0.50, 0.6 |
-| closing card | 0.50, 0.50, 0.46, 1, 5.4, 0 | 0.50, 0.50, 0.60, 0.9 |
+| hero | 0.77, 0.36, 0.30, 1, 0, 0 | 0.50, measured, 0.36, 1 |
+| features | 0.50, 0.50, 1.45, 0.85, 1.2, 0.30 | 0.50, 0.50, 1.60, 0.8 |
+| pricing | 0.50, 0.56, 0.95, 0.8, 2.5, −0.24 | 0.50, 0.50, 1.20, 0.75 |
+| reviews | 0.50, 0.50, 1.20, 0.8, 3.6, 0.40 | 0.50, 0.50, 1.40, 0.75 |
+| FAQ | 0.50, 0.50, 0.72, 0.85, 4.7, −0.16 | 0.50, 0.50, 1.00, 0.75 |
+| closing plate | 0.50, measured, ≤ 0.21, 1, 2π, 0 | 0.50, measured, ≤ 0.27, 1 |
 
-- On each scroll frame the script interpolates between the two nearest section midpoints with `smoothstep` and calls `Core.pose(...)` (16.6). There is no spring, so the Core follows the scroll position exactly. The hero keyframe is pinned to the top of the page.
+- On each scroll frame the script interpolates between the two nearest section midpoints with `smoothstep` and calls `Core.pose(...)` (16.6). There is no spring, so the Core follows the scroll position exactly. The hero keyframe is pinned to the top of the page: until the visitor scrolls, the Core stays in place.
+- **The end is measured, not fixed.** The closing pose is reached exactly when the page is scrolled to its end. The gap for the Core is set in CSS (`.js .final { padding-top: clamp(15rem, 44vh, 26rem) }`); the script measures its visible part, from the header to the closing plate, puts the Core in the middle and limits the radius to 42% of the gap height. A gap under 160 px keeps the table values. The gap exists only where the Core flies into it: without scripts and under reduced motion the closing plate stands at the normal section distance.
+- **Phones.** Panes are opaque and full width, so the path has no sideways moves: the Core is centred the whole way. At the top it rises from behind the upper edge of the headline plate (`y` is that edge, measured), so it sits centred above the headline and is not clipped by a corner. It is seen above the first screen, in the gaps between sections and above the closing plate.
 - The page never takes over scrolling: no snapping, nothing waits for an animation, the listener is passive.
-- Narrow screens and coarse pointers use the calmer path and update the pose at most 30 times a second, so the scene does not redraw on every scroll frame.
+- Narrow screens and coarse pointers update the pose at most 30 times a second, so the scene does not redraw on every scroll frame.
 - **Lit edges follow the Core.** The script writes `--core-x` and `--core-y` on the glass surfaces and on `.core-scene` only (never on `<html>`), at most 8 times a second and only when the value changed by 2 or more. This keeps the rule from section 5 (do not restyle the whole page every frame).
 - Reduced motion (`prefers-reduced-motion` or `data-core-motion="reduce"`): no flight. The Core is posed once at the hero keyframe and stays there; reveal transitions are off.
 - Keyframes are measured again on resize and when the document height changes.
 
 ### 16.4 The demonstration
 
-The demo frame shows the product working. Switching the example: the frame returns to its waiting state and the Core goes to `thinking`; when the example has loaded the frame shows it, the Core goes to `answering`, then `rest` after 0.9 s. If the example does not load within 6 s the frame stops waiting. While the visitor types in the demo field the Core is `listening`. None of this runs under reduced motion. The example pages in `public/demo` are content; only the frame is styled, and the result area is opaque (`--core-solid-dense`), never tinted or blurred.
+The demo frame shows the product working. Switching the example: the frame returns to its waiting state and the Core goes to `thinking`; when the example has loaded the frame shows it, the Core goes to `answering`, then `rest` after 0.9 s. The result is shown as soon as it has loaded; the Core keeps `thinking` for at least 350 ms so the step is visible. If the example does not load within 6 s the frame stops waiting. While the visitor types in the demo field the Core is `listening`. None of this runs under reduced motion. The example pages in `public/demo` are content; only the frame is styled, and the result area is opaque (`--core-solid-dense`), never tinted or blurred.
+
+Two rules on the frame's `iframe` are load-bearing. The page script renders the example 1100 px wide and scales it down to the frame, so the `iframe` is pinned to the frame's corner (`position: absolute; top: 0; left: 0; transform-origin: 0 0`); without that the example is drawn shifted down and right, half outside the frame. And it keeps `border-radius: 1px`: where glass has no blur (phones), Chrome treated a square opaque frame as covering the Core's canvas and left an unpainted rectangle on the page between the first screen and the features; a rounded frame is not used for that culling.
 
 ### 16.5 Pricing
 
-The landing's `.tier` plates follow the step 5 `.plan` rules: plan name in the machine voice, one dominant price (`--core-machine-5`), the old price as a small row above it, the term small after it, features under a hairline, edges brighter for higher plans, the recommended plate in front (`--core-fill-2`, a `--core-text-2` edge, near shadow). The period switch `.lp-per` is the same segmented control as `.pm-per`. One amber button in the section: the recommended plan's. The trial offer button and "leave a review" are glass buttons.
+The landing's `.tier` plates follow the step 5 `.plan` rules: plan name in the machine voice, one dominant price (`--core-machine-5`), the old price as a small row above it, the term small after it, features under a hairline, edges brighter for higher plans, the recommended plate in front (`--core-fill-2`, a `--core-text-2` edge, near shadow). The period switch `.lp-per` is the same segmented control as `.pm-per`; up to 480 px it is an even 2×2 grid across the pane. One amber button in the section: the recommended plan's. The trial offer button and "leave a review" are glass buttons. In the review window the rating stars light up to the hovered or chosen one: the script marks them with `.selected` (`.rv-rating button.selected`), and `aria-checked` sits on the chosen star only.
 
 ### 16.6 Shared file change: `Core.pose`
 
@@ -1193,10 +1200,12 @@ The landing's `.tier` plates follow the step 5 `.plan` rules: plan name in the m
 ### 16.7 Login
 
 - The Core fills the screen, centred. The form is one mid-glass plate (`.box`): language switch, content, legal line and the "back" link are all on it. The product pitch is on a far panel on the left and is hidden up to 860 px.
+- In two columns the Core stands between the plates (radius 0.42 of the shorter side). In one column (up to 860 px) the plate covers the middle of the screen, so the Core is larger than the screen (0.55 of the longer side) and is seen around the plate, not only through it.
 - Sign-in buttons are glass; the default screen has no amber. Amber appears on the code step's submit and on the "continue" link after a backup code.
 - States, all kept: sign in or register through Google or GitHub; a provider being opened (button dims, label changes); providers not configured (buttons disabled, neutral message); registration closed (note); `?err=…` from the server (error line in the status colour); the second factor (`?step=2fa`): waiting for the code, checking, wrong code, expired session, backup code used. There is no password form and no recovery screen on this page.
 - Field attributes are untouched (`autocomplete="one-time-code"`, `inputmode="numeric"`), so autofill and password managers behave as before.
-- **Success flight.** `premierFly(done)` moves the Core toward the viewer for about 420 ms while the plates fade, then calls `done`, which opens the chat. A 900 ms timer calls `done` regardless. With reduced motion, or without the scene, `done` runs at once. The page calls it after a correct second-factor code. Sign-in through Google or GitHub ends in a server redirect to the chat, which this page cannot animate without a server change.
+- **Success flight.** `premierFly(done)` moves the Core toward the viewer for about 420 ms while the plates fade, then calls `done`, which opens the chat. A 900 ms timer calls `done` regardless. With reduced motion, or without the scene, `done` runs at once. The page calls it after a correct second-factor code.
+- **Flight after Google or GitHub (off by default).** These sign-ins end in a server redirect, so the flight needs one more page. With `LOGIN_FLIGHT=on` the server redirects to `/login?in=1` instead of `/chat` and writes `window.IN=true` next to `window.REG`. The plate then says "Signed in · Opening the chat…", `core-login.js` loads the scene at once, waits for the Core to be drawn (`core:scene`, `ready`), holds 120 ms, flies and opens the chat. The chat opens without a flight if motion is reduced, the device is remembered as slow (`core-q` is `still`), there is no WebGL, or the Core is not drawn within 700 ms of the page starting to load. The response also carries `Refresh: 2; url=/chat` in case the script never runs. `/login?in=1` shows this state only to a signed-in visitor and only with the setting on; otherwise it behaves as `/login`. It is off by default because it makes every such sign-in longer: about 0.8 s on a machine with a GPU (an estimate, not measured), and 1–2.4 s with no flight shown where WebGL is rendered in software (measured in a sandbox without a GPU), because the scene start cannot be interrupted.
 
 ### 16.8 Trial
 
@@ -1205,7 +1214,8 @@ A close-up of the pricing section: one mid-glass plate with the headline, the 24
 ### 16.9 Server contract (do not break)
 
 - `seo.js` fills `<!--SEO-->`, rewrites `<title>` and `<meta name="description">`, and builds FAQ structured data from `<details class="faq-item"><summary>…</summary><div class="faq-a">…</div></details>`. Keep that markup exactly.
-- The login page keeps `<!--REG-->`; the server writes `window.GOOGLE`, `window.GITHUB` and `window.REG` there.
+- The login page keeps `<!--REG-->`; the server writes `window.GOOGLE`, `window.GITHUB` and `window.REG` there, and `window.IN` on arrival after sign-in (16.7).
+- The landing keeps `<div class="tiers rv" id="tiers"></div>` empty and written exactly so: `seo.landing` replaces it with the same element holding the `<noscript>` plates (16.2). English plates take plan descriptions from the same catalogue as `/api/plans` (`language.phrase`).
 - Element ids and classes used by the inline scripts and `team-offer.js` are unchanged. New wrappers added in step 6: `.hero-copy`, `.hero-meta`, `.pane`, `.plate`.
 
 ### 16.10 English pages
@@ -1218,6 +1228,8 @@ A close-up of the pricing section: one mid-glass plate with the headline, the 24
 - Contrast: hide the text, screenshot, and compare each text block's colour with the pixels behind it at every scroll position, both themes, 1440 and 390 px.
 - Layout shift: record `layout-shift` entries and their sources until 3 s after load.
 - Scroll smoothness: 390 px with the CPU slowed 4×; compare frame intervals with the scene blocked, with the scene but no flight, and with the flight.
+- First-screen timing: compare with the tree before the change on the same machine in the same run, cold loads in fresh contexts, interleaved, medians of several; single loads differ by 100–200 ms.
+- `tests/core-landing.test.js` checks what the server sends for these pages: the no-script pricing plates in both languages and the arrival page after sign-in.
 
 ## 17. Status page and the rest of step 7
 

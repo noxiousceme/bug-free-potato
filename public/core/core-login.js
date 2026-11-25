@@ -35,11 +35,32 @@
     requestAnimationFrame(step);
   };
 
-  const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
-  addEventListener('load', () => idle(() => {
+  const scene = () => {
     const s = document.createElement('script');
     s.src = '/core/core-scene.js?v=4';
-    s.onload = () => { document.documentElement.classList.add('core-live'); place(); addEventListener('resize', place); };
+    s.onload = () => { root.classList.add('core-live'); place(); addEventListener('resize', place); };
     document.body.appendChild(s);
-  }));
+  };
+  const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
+  // Вход через Google или GitHub уже выполнен (сервер вернул на /login?in=1, страница задала premierIn): ждать нечего,
+  // сцена грузится сразу. Полёт начинается, когда Ядро нарисовано (событие core:scene, ready) и его успели увидеть.
+  // Чат открывается без полёта, если движение уменьшено, устройство запомнено как слабое, 3D нет или Ядро
+  // не появилось за 700 мс от начала загрузки: посетитель уже ждал, задерживать его дальше незачем.
+  const arrive = window.premierIn, LIMIT = 700;
+  if (typeof arrive === 'function') {
+    let gone = false, weak = false;
+    const go = () => { if (!gone) { gone = true; arrive(); } };
+    try { weak = /^still:/.test(localStorage.getItem('core-q') || ''); } catch (e) {}
+    if (still() || weak) go();
+    else {
+      const late = setTimeout(go, LIMIT);
+      root.addEventListener('core:scene', (e) => {
+        const d = e.detail || {};
+        if (gone || d.mode === 'boot') return;
+        if (d.mode !== 'live' || performance.now() > LIMIT) return go();   // таймер мог не успеть, пока сцена запускалась
+        if (d.type === 'ready') { clearTimeout(late); setTimeout(() => window.premierFly(go), 120); }
+      });
+      scene();
+    }
+  } else addEventListener('load', () => idle(() => scene()));
 })();
