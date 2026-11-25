@@ -25,7 +25,7 @@ test('чат в Chromium: retry/reset, превью и завершение ош
     const events = mode === 'repair'
       ? [{ r: 'Planning' }, { t: '```html\n<html><body>unfinished' }, { s: 'repair', q: 'Повтор' }, { reset: true }, { t: html }, { diag: { repairs: 1, outcome: 'complete' } }]
       : [{ r: 'Planning without a final answer' }, { e: 'Модель не завершила запрос за 180 с.' }, { diag: { outcome: 'timeout' } }];
-    await route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: events.map((e) => JSON.stringify(e)).join('\n') + '\n' });
+    await route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: events.concat([{ fin: true }]).map((e) => JSON.stringify(e)).join('\n') + '\n' });
   });
   await page.goto(s.base + '/chat');
   await page.waitForFunction(() => MODELS.length > 0);
@@ -45,6 +45,6 @@ test('чат в Chromium: retry/reset, превью и завершение ош
   assert.match(failed.err, /не завершила запрос/);
   assert.equal(failed.diag.outcome, 'timeout');
   assert.equal(failed.thinking, false);
-  assert.equal(await page.evaluate(() => busy === null), true);
+  assert.equal(await page.evaluate(() => !anyBusy()), true);
   assert.deepEqual(errors, []);
 });
