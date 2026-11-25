@@ -340,7 +340,7 @@ footer .brand { font-size: var(--core-fs-3); color: var(--core-text); }
   .show-input input { font-size: 16px; }
   .rv-field input, .rv-field textarea { font-size: 16px; }
 }
-@media (max-width: 380px) {
+@media (max-width: 480px) {
   .nav .btn.sm { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {

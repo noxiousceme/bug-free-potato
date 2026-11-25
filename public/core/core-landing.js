@@ -56,10 +56,11 @@
     apply();
   }
 
-  addEventListener('load', () => {
+  const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
+  addEventListener('load', () => idle(() => {
     const s = document.createElement('script');
     s.src = '/core/core-scene.js?v=3';
     s.onload = start;
     document.body.appendChild(s);
-  });
+  }));
 })();

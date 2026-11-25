@@ -1,0 +1,103 @@
+/* Premier · вход на системе Core (редизайн, шаг 6).
+   Ядро во весь экран, форма — одна стеклянная плита. Id и классы разметки сохранены: их читают скрипты страницы. */
+
+html.core { scroll-behavior: auto; }
+body { margin: 0; min-height: 100vh; min-height: 100dvh; font: var(--core-human-3); color: var(--core-text); overflow-x: hidden; }
+h1, h2, h3, p { margin: 0; }
+h1, h2 { font-family: var(--core-font-human); font-weight: var(--core-w-3); letter-spacing: 0; }
+a { color: inherit; }
+svg { flex: none; }
+[hidden] { display: none !important; }
+
+.wrap2 {
+  position: relative; z-index: 1; min-height: 100vh; min-height: 100dvh; box-sizing: border-box;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); align-items: center; gap: var(--core-s-16);
+  width: min(1080px, calc(100% - var(--core-s-8))); margin-inline: auto; padding: var(--core-s-16) 0;
+  transition: opacity var(--core-dur-3) var(--core-ease-move);
+}
+body.flying .wrap2 { opacity: 0; }
+
+/* левая колонка: текст о продукте на собственной плите (текст не стоит прямо на Ядре) */
+.pitch {
+  padding: var(--core-s-8); border-radius: var(--core-r-lg); max-width: 460px;
+  background: var(--core-glass-far); -webkit-backdrop-filter: var(--core-backdrop-far); backdrop-filter: var(--core-backdrop-far);
+  border: 1px solid var(--core-line); box-shadow: inset 0 1px 0 var(--core-edge-far), var(--core-shadow-far);
+}
+.pitch .brand { display: inline-flex; align-items: center; gap: var(--core-s-2); font: var(--core-human-4); color: var(--core-text); text-decoration: none; min-height: var(--core-hit); }
+.pitch .mark { width: 28px; height: 28px; border-radius: var(--core-r-sm); overflow: hidden; display: inline-block; }
+.pitch h2 { margin-top: var(--core-s-8); font-size: clamp(1.7rem, 1.2rem + 1.4vw, 2.4rem); line-height: 1.15; }
+.pitch h2 span { display: block; color: var(--core-text-2); }
+.pitch p { margin-top: var(--core-s-4); font: var(--core-human-3); color: var(--core-text-2); }
+
+/* правая колонка: одна плита */
+.box { display: grid; gap: var(--core-s-4); min-width: 0; }
+.box .brand { display: none; }
+.language-login { display: flex; justify-content: flex-end; }
+.language-switch { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--core-r-full); background: var(--core-fill-1); border: 1px solid var(--core-line); }
+.language-switch a { font: var(--core-machine-2); color: var(--core-text-2); padding: 0 var(--core-s-2); min-height: 28px; display: inline-flex; align-items: center; border-radius: var(--core-r-full); text-decoration: none; }
+.language-switch a[aria-current="true"], .language-switch a.on { color: var(--core-text); background: var(--core-fill-2); }
+.card {
+  padding: var(--core-s-8); display: grid; gap: var(--core-s-4); min-width: 0; border-radius: var(--core-r-lg);
+  background: var(--core-glass-mid); -webkit-backdrop-filter: var(--core-backdrop-mid); backdrop-filter: var(--core-backdrop-mid);
+  border: 1px solid var(--core-line); box-shadow: inset 0 1px 0 var(--core-edge-mid), var(--core-shadow-mid);
+}
+.card h1 { font-size: var(--core-fs-5); line-height: 1.2; }
+.card .sub { font: var(--core-human-2); color: var(--core-text-2); margin-top: calc(var(--core-s-2) * -1); }
+.card form { display: grid; gap: var(--core-s-4); }
+.card label { display: grid; gap: var(--core-s-2); font: var(--core-human-2); color: var(--core-text-2); }
+.card label span { font: var(--core-human-2); }
+.card input {
+  min-height: var(--core-hit); padding: var(--core-s-2) var(--core-s-3); border-radius: var(--core-r-sm); box-sizing: border-box; width: 100%;
+  border: 1px solid var(--core-line-2); background: var(--core-fill-1); color: var(--core-text); font: var(--core-machine-1); font-size: 16px; letter-spacing: .2em;
+}
+.card input::placeholder { color: var(--core-text-3); letter-spacing: 0; font: var(--core-human-3); }
+.card input:focus-visible, .card input:focus { outline: 2px solid var(--core-focus); outline-offset: 2px; border-color: var(--core-focus); }
+.card input:disabled { opacity: .6; }
+
+/* кнопки входа: нейтральные, без янтаря (янтарь — на шаге кода) */
+.gbtn, .ghbtn {
+  display: flex; align-items: center; justify-content: center; gap: var(--core-s-3); min-height: 48px; padding: 0 var(--core-s-5);
+  border-radius: var(--core-r-full); border: 1px solid var(--core-line-2); background: var(--core-fill-2); color: var(--core-text);
+  font: var(--core-human-3); text-decoration: none; cursor: var(--core-cursor-action); transition: background var(--core-dur-2) var(--core-ease-move), opacity var(--core-dur-2) var(--core-ease-move);
+}
+.gbtn:hover, .ghbtn:hover { background: var(--core-fill-3); }
+.gbtn:focus-visible, .ghbtn:focus-visible, .btn:focus-visible, .back:focus-visible, .language-switch a:focus-visible { outline: 2px solid var(--core-focus); outline-offset: 2px; }
+.gbtn svg, .ghbtn svg { width: 18px; height: 18px; }
+.gbtn.off, .ghbtn.off { opacity: .45; pointer-events: none; }
+.err { min-height: 1.4em; font: var(--core-human-2); color: var(--core-bad); }
+.err.info { color: var(--core-text-2); }
+.note { font: var(--core-human-1); color: var(--core-text-2); }
+.legal { font: var(--core-human-1); color: var(--core-text-3); }
+.legal a { color: var(--core-text-2); text-underline-offset: 3px; }
+.back { font: var(--core-human-2); color: var(--core-text-2); text-decoration: none; justify-self: center; min-height: var(--core-hit); display: inline-flex; align-items: center; }
+.back:hover { color: var(--core-text); }
+
+/* единственная янтарная кнопка: подтверждение кода и переход в чат */
+.btn {
+  --_ink: var(--core-text-on-heat); display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 var(--core-s-6);
+  border-radius: var(--core-r-full); border: 0; color: var(--_ink); font: var(--core-human-3); font-weight: var(--core-w-3); cursor: var(--core-cursor-action);
+  background: radial-gradient(110% 170% at 50% 50%, var(--core-heat-4), var(--core-heat-3) 70%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--core-heat-5) 38%, transparent), 0 6px 22px -8px color-mix(in srgb, var(--core-heat-3) 70%, transparent);
+  text-decoration: none;
+}
+.btn:disabled { background: var(--core-fill-3); color: var(--core-text-2); box-shadow: none; cursor: default; }
+#tfaNext { text-decoration: none; }
+
+@media (max-width: 860px) {
+  .wrap2 { grid-template-columns: minmax(0, 1fr); gap: var(--core-s-6); max-width: 400px; }
+  .pitch { display: none; }
+  .box .brand { display: inline-flex; align-items: center; gap: var(--core-s-2); font: var(--core-human-4); color: var(--core-text); text-decoration: none; justify-self: center; min-height: var(--core-hit); }
+  .box .brand .mark { width: 28px; height: 28px; border-radius: var(--core-r-sm); overflow: hidden; display: inline-block; }
+  .card { padding: var(--core-s-6); }
+  .card input, .gbtn, .ghbtn, .btn { min-height: var(--core-hit); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wrap2, .gbtn, .ghbtn { transition: none; }
+}
+html[data-core-motion="reduce"] .wrap2, html[data-core-motion="reduce"] .gbtn, html[data-core-motion="reduce"] .ghbtn { transition: none; }
+.pitch ul { list-style: none; margin: var(--core-s-8) 0 0; padding: 0; display: grid; gap: var(--core-s-4); }
+.pitch li { display: flex; align-items: flex-start; gap: var(--core-s-3); }
+.pitch li i { flex: none; width: 32px; height: 32px; border-radius: var(--core-r-sm); background: var(--core-fill-2); display: grid; place-items: center; color: var(--core-text); }
+.pitch li svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pitch li b { display: block; font: var(--core-human-3); color: var(--core-text); font-weight: var(--core-w-3); }
+.pitch li span { font: var(--core-human-2); color: var(--core-text-2); }

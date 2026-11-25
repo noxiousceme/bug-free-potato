@@ -1137,11 +1137,11 @@ The chat page no longer loads `tokens.css` or `chat-legacy.css`. It loads `core/
 
 ## 16. Long marketing pages: the landing (step 6)
 
-Scope of this step: the landing page (`public/index.html`, `public/en/index.html`) and its stylesheet `core/core-landing.css` and script `core/core-landing.js`. The login and trial pages are not in this step's delivery; see the change note.
+Scope of this step: three pages that a visitor sees before the product — the landing (`public/index.html`, `public/en/index.html`), the login page (`public/login.html`, `public/en/login.html`) and the trial page (`public/protrial.html`, `public/en/protrial.html`). Their stylesheets are `core/core-landing.css`, `core/core-login.css` and `core/core-trial.css`; their scripts are `core/core-landing.js`, `core/core-login.js` and `core/core-trial.js`.
 
 ### 16.1 Loading and first paint
 
-- The page loads only the Core base: `core-tokens.css`, `core-base.css`, `core-scene.css` and `core-landing.css`. `core-components.css` is not loaded, because the landing uses no `core-*` component classes; the components are styled by `core-landing.css` itself.
+- The page loads the Core base: `core-tokens.css`, `core-base.css`, `core-components.css` (required together by the foundation test, even though the landing uses few of its classes), `core-scene.css` and `core-landing.css`.
 - The scene is not in the first paint. `core-landing.js` appends `core-scene.js` after the window `load` event. Text, buttons and the demo are visible before the scene starts.
 - Without scripts the page is complete: the headline, lead, buttons, feature cards, FAQ (native `<details>`) and footer are in the HTML and visible. Reveal animations are gated by `.js` on `<html>`, which the first inline script sets. Pricing plates are filled by script from `/api/plans`, so with scripts disabled the pricing area is empty. This is pre-existing and needs a server-side render to fix; it was not changed in this step.
 - Without WebGL the scene falls back to its CSS glow (`core-scene.css`). The page is otherwise unchanged.
@@ -1186,3 +1186,18 @@ Rules that later steps must keep:
 - Scroll-flight smoothness at phone size with a throttled CPU; the scene's own quality levels are the only mitigation in place.
 - Contrast of body text over the Core at every keyframe was checked by eye in screenshots, not measured.
 - First-paint timing on a slow phone was noisy in this sandbox (see the change note); the measured difference is not a result.
+
+### 16.8 The login page and the trial page
+
+Both pages use the same shape: the Core fills the screen, and one glass plate carries the form or the offer.
+
+- **Login** (`login.html`). Left: a pitch on its own far panel (the Core must never sit under body text). Right: one medium-glass card with the sign-in buttons. The sign-in buttons are neutral, so the default state has no amber; amber appears only on the code step's submit button and the backup-code "continue" link. The Core is centred and placed by `core-login.js`.
+- Login states, all kept from the old page: default; providers not configured (buttons disabled, message shown); registration closed (note shown); `?err=…` from the server (error line); the second-factor code step (`?step=2fa`) with waiting, wrong-code, expired and backup-code-used states.
+- **The success flight.** `premierFly(done)` (in `core-login.js`) moves the Core's pose from the centre toward the viewer over about 420 ms, fades the card, then calls `done`, which navigates to the chat. A 900 ms timer calls `done` regardless. Under `prefers-reduced-motion`, or without the scene, `done` runs at once. The inline script calls it only on the code step's success, where the page is still in control. Sign-in through Google or GitHub ends in a server redirect that no page of this design can animate, so that path navigates without a flight.
+- **Trial** (`protrial.html`). One glass plate holds the headline, the 24-hour countdown (the one number, in the machine voice) and the single amber action. The features, comparison table, steps and FAQ follow as plates on the same system. The Core stands to the side (`core-trial.js` places it once; there is no flight). The claim button keeps its old handler; the script still switches its label and classes.
+- Both pages hide their theme files: `login.html` no longer loads `theme/login.gen.css`, `theme/app.css` or `language.css`; `protrial.html` no longer loads `protrial.css` or `tokens.css`. The files stay on disk until step 8.
+
+### 16.9 Test notes for the pages
+
+- `test/protrial.test.js` (older folder, not run by `npm test`) fails on a missing `better-sqlite3` install in this environment; the untouched baseline fails the same way.
+- Tests that read the landing's trial-button rule now read `core/core-landing.css`. The `lang` assertions in `test/i18n.test.js` accept the `class` attribute that `<html>` now carries.
