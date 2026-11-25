@@ -1,4 +1,4 @@
-# Premier · Core — design system (redesign steps 1–6 of 8 (step 6: landing only))
+# Premier · Core — design system (redesign steps 1–7 of 8 (step 7: status page only))
 
 This document describes the foundation that every later redesign step builds on.
 It is written for someone who has only this file and the files it names.
@@ -1201,3 +1201,32 @@ Both pages use the same shape: the Core fills the screen, and one glass plate ca
 
 - `test/protrial.test.js` (older folder, not run by `npm test`) fails on a missing `better-sqlite3` install in this environment; the untouched baseline fails the same way.
 - Tests that read the landing's trial-button rule now read `core/core-landing.css`. The `lang` assertions in `test/i18n.test.js` accept the `class` attribute that `<html>` now carries.
+
+## 17. Status page and the rest of step 7
+
+Step 7 is the developer cabinet, the admin panel and the status page. This section records what is done and what is not.
+
+### 17.1 Status page (done)
+
+`public/status.html` (served at `/status`, which redirects here). It is Russian only; there is no English page for it.
+
+- Loads only Core files: `core-tokens.css`, `core-base.css`, `core-components.css`, `core-scene.css`, `core-status.css`, and `core-ui.js` for tooltips. The Onest font is served from `/fonts`. Nothing is loaded from another domain (the earlier Google Fonts link was removed).
+- The Core sits in the upper right, quiet (gain below the trial page's), placed by `core-status.js` after the window `load` event in idle time. It does not move.
+- Outage segments in the 24-hour bars are keyboard-focusable (`tabindex="0"`) and show their reason as a Core tooltip (`data-core-tip`) on hover and focus. Native `title` tooltips are gone.
+- On coarse pointers each outage segment gets an invisible 44 px hit area, so the bars keep their size.
+- Status colour (`--core-ok`, `--core-bad`) appears only where it means status. A model without data uses the neutral dot.
+- Every class and id the script uses is kept: `upd`, `sum`, `list`, `chip`, `dot`, `m`, `m-top`, `st`, `sp2`, `up`, `tl`, `tl-l`, `note`. The script's texts and logic are unchanged.
+
+### 17.2 Developer cabinet (not started)
+
+`public/developers.html` is a 1.2 KB shell. Everything is drawn by `public/developers.js` (153 KB) using `public/developers.css` (58 KB, old tokens). The English page has its own `en/developers.html` and `en/developers.js`. It is `noindex`. Restyling it means rewriting most of the stylesheet around the classes the script builds, and the English page must be edited by hand, since the generator is broken.
+
+### 17.3 Admin panel (not started)
+
+`public/panel.html` (served at `/panelp`) loads `admin/admin.css` (37 KB) and 23 modules under `public/admin/` (`v-legacy.js` alone is 74 KB). It is internal and `noindex`. The panel shares tokens with the public pages, so its restyle depends on the Core tokens only.
+
+### 17.4 Order for the rest of step 7
+
+1. Developer cabinet: shell and stylesheet first, then the script-built sections (keys, models, usage, docs), in both languages.
+2. Admin panel: shell and stylesheet, then the view modules one by one. Keep every id, data attribute and handler, and check each view in both themes at 1440 and 390 px.
+3. Both: `npm test`, then a note in `ИЗМЕНЕНИЯ-РЕДИЗАЙН-ШАГ-7-…`.

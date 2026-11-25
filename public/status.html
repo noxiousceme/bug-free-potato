@@ -1,52 +1,16 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" class="core">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Статус моделей — Premier</title>
 <link rel="icon" type="image/png" href="/icon-p-2.png">
 <meta name="theme-color" content="#0b0b0c">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Onest:wght@400..700&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#0b0b0c;--card:#141415;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--text:#ededed;--muted:rgba(255,255,255,.6);--dim:rgba(255,255,255,.4);--ok:#6fd391;--bad:#f19a9a}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font:15px/1.6 Onest,-apple-system,"Segoe UI",Inter,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:980px;margin:0 auto;padding:0 24px}
-header{position:sticky;top:0;background:rgba(11,11,12,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:5}
-header .wrap{height:60px;display:flex;align-items:center;gap:24px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:16px;color:var(--text);text-decoration:none}
-.mark{width:24px;height:24px;border-radius:6px;background:linear-gradient(145deg,#f2f2f2,#9a9a9a);color:#111;display:grid;place-items:center;font-size:12px;font-weight:800}
-a{color:var(--muted);text-decoration:none;font-size:14px}
-a:hover{color:var(--text)}
-.sp{flex:1}
-main{padding:40px 0 80px}
-h1{font-size:26px;font-weight:650;margin-bottom:4px}
-.sub{color:var(--muted);font-size:14px;margin-bottom:24px}
-.sum{margin-bottom:20px}
-.chip{display:inline-flex;align-items:center;gap:9px;padding:9px 15px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px;color:var(--muted)}
-.chip b{color:var(--text);font-weight:650}
-.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
-.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.na{background:rgba(255,255,255,.25)}
-.m{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:16px 18px;margin-bottom:12px}
-.m-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.m-top b{font-size:15px}
-.m-top .st{font-size:13px;color:var(--muted)}
-.m-top .st.bad{color:var(--bad)}
-.sp2{flex:1}
-.up{font-size:13px;color:var(--muted);white-space:nowrap}
-.up b{color:var(--text);font-weight:650}
-.tl{display:flex;gap:2px;margin-top:14px}
-.tl i{flex:1;height:10px;border-radius:2px;background:rgba(255,255,255,.07)}
-.tl i.up{background:rgba(111,211,145,.75)}
-.tl i.down{background:rgba(241,154,154,.8)}
-.tl-l{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-top:5px}
-.tl i.down{cursor:help}
-.note{margin-top:28px;font-size:12.5px;color:var(--dim);line-height:1.65}
-@media(max-width:560px){.up{display:none}.m-top .st{width:100%}}
-</style>
-<style>.mark{background:transparent}</style>
+<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"><link rel="stylesheet" href="/core/core-status.css?v=1">
 </head>
 <body>
+<div class="core-scene" aria-hidden="true"></div>
 <header><div class="wrap"><a class="brand" href="/"><span class="mark"><img src="/icon-p-2.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></span>Premier</a><span class="sp"></span><a href="/status">Модели</a><a href="/">На главную</a></div></header>
 <main class="wrap">
 <h1>Статус моделей</h1>
@@ -80,7 +44,7 @@ async function load() {
       const t0 = now - (47 - i) * 18e5, t1 = t0 + 18e5;
       const hit = incs.find((z) => z.from <= t1 && (z.to == null || z.to >= t0));
       const tip = fmtT(t0) + '–' + fmtT(t1) + (hit ? ' — ' + (hit.err || 'ошибка') : ' — ошибка');
-      return '<i class="' + cls + '" title="' + esc2(tip) + '"></i>';
+      return '<i class="' + cls + '" tabindex="0" data-core-tip="' + esc2(tip) + '"></i>';
     }).join('');
     return '<div class="m"><div class="m-top"><span class="dot ' + (x.probe ? (ok ? 'ok' : 'bad') : 'na') + '"></span><b>' + esc2(x.name) + '</b><span class="st ' + (x.probe && !ok ? 'bad' : '') + '">' + stTxt + '</span>' + (ok ? '<span class="st">· пинг ' + fmtMs(x.probe.ms) + ' в ' + fmtT(x.probe.at) + '</span>' : '') + '<span class="sp2"></span><span class="up">' + up + '</span></div><div class="tl">' + tl + '</div><div class="tl-l"><span>−24ч</span><span>−12ч</span><span>сейчас</span></div></div>';
   }).join('');
@@ -88,5 +52,7 @@ async function load() {
 load();
 setInterval(load, 60000);
 </script>
+<script defer src="/core/core-ui.js?v=2"></script>
+<script defer src="/core/core-status.js?v=1"></script>
 </body>
 </html>
