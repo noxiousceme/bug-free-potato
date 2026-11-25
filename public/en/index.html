@@ -8,10 +8,10 @@
 <link rel="manifest" href="/manifest-en.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Premier">
 <meta name="description" content="An AI that doesn’t just answer but runs code on its own cloud Linux machine: GPT, Gemini, DeepSeek, Kimi and Qwen in one chat. Websites, games and Python. Start for free.">
 <!--SEO-->
-<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <script>document.documentElement.classList.add('js')</script>
 <script>(function(){try{var r=new URLSearchParams(location.search).get('ref');if(r&&/^[a-zA-Z0-9_-]{8,64}$/.test(r)){localStorage.setItem('premier:ref',r);var u=new URL(location.href);u.searchParams.delete('ref');history.replaceState(null,'',u.pathname+u.search);}}catch(e){}})();</script>
-<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-landing.css?v=1">
+<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"></noscript><link rel="stylesheet" href="/core/core-landing.css?v=1">
 <script src="/language.js?v=2"></script>
 </head>
 <body>
@@ -48,11 +48,13 @@
   <div class="hero">
     <div class="glow" aria-hidden="true"></div>
     <div class="wrap">
+      <div class="hero-copy">
       <div class="hero-kicker"><span class="kicker-mark" aria-hidden="true"></span><span id="kickerText">Top AI models in one place</span></div>
       <h1>Write code, build websites<br><span>and solve tasks in one chat</span></h1>
       <p class="lead">From idea to a finished result: answers, code, websites and games.</p>
       <div class="cta"><a href="/chat" class="btn pri">Try for free<svg aria-hidden="true"><use href="#i-arrow"/></svg></a><a href="#features" class="btn ghost">Explore features</a></div>
       <p class="hero-offer" id="heroOffer" hidden></p>
+      </div>
       <div class="card show rv" id="preview" aria-label="Website creation demo">
       <div class="demo-tabs" id="demoTabs" role="tablist" aria-label="Examples">
         <button type="button" class="on" data-demo="0">Snake game</button>
@@ -71,8 +73,10 @@
           <div class="site" id="siteBox"><iframe id="siteFrame" title="Example: Snake game" src="/demo/snake.html?v=2" sandbox="allow-scripts"></iframe><div class="ld"><div><i></i>Loading…</div></div></div>
         </div>
       </div>
+      <div class="hero-meta">
       <div class="hero-facts"><span><svg aria-hidden="true"><use href="#i-check"/></svg>No VPN needed</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>No foreign card needed</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>Free plan available</span></div>
       <div class="hero-models" id="heroModels"><span>Models inside</span></div>
+      </div>
     </div>
   </div>
 

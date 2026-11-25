@@ -8,10 +8,10 @@
 <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Premier">
 <meta name="description" content="ИИ, который не только отвечает, но и сам запускает код в облачном Linux: GPT, Gemini, DeepSeek, Kimi и Qwen в одном чате. Сайты, игры и Python без VPN и зарубежной карты. Начните бесплатно.">
 <!--SEO-->
-<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <script>document.documentElement.classList.add('js')</script>
 <script>(function(){try{var r=new URLSearchParams(location.search).get('ref');if(r&&/^[a-zA-Z0-9_-]{8,64}$/.test(r)){localStorage.setItem('premier:ref',r);var u=new URL(location.href);u.search='';history.replaceState(null,'',u.pathname);}}catch(e){}})();</script>
-<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-landing.css?v=1">
+<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"></noscript><link rel="stylesheet" href="/core/core-landing.css?v=1">
 <script src="/language.js?v=2"></script>
 </head>
 <body>
@@ -48,11 +48,13 @@
   <div class="hero">
     <div class="glow" aria-hidden="true"></div>
     <div class="wrap">
+      <div class="hero-copy">
       <div class="hero-kicker"><span class="kicker-mark" aria-hidden="true"></span><span id="kickerText">ТОПОВЫЕ НЕЙРОСЕТИ В ОДНОМ ОКНЕ</span></div>
       <h1>Пиши код, создавай сайты<br><span>и решай задачи в одном чате</span></h1>
       <p class="lead">От идеи — к готовому результату: ответы, код, сайты и игры.</p>
       <div class="cta"><a href="/chat" class="btn pri">Попробовать бесплатно<svg aria-hidden="true"><use href="#i-arrow"/></svg></a><a href="#features" class="btn ghost">Возможности</a></div>
       <p class="hero-offer" id="heroOffer" hidden></p>
+      </div>
       <div class="card show rv" id="preview" aria-label="Демонстрация создания сайта">
       <div class="demo-tabs" id="demoTabs" role="tablist" aria-label="Примеры">
         <button type="button" class="on" data-demo="0">Игра «Змейка»</button>
@@ -71,8 +73,10 @@
           <div class="site" id="siteBox"><iframe id="siteFrame" title="Пример: игра «Змейка»" src="/demo/snake.html?v=2" sandbox="allow-scripts"></iframe><div class="ld"><div><i></i>Загружаем…</div></div></div>
         </div>
       </div>
+      <div class="hero-meta">
       <div class="hero-facts"><span><svg aria-hidden="true"><use href="#i-check"/></svg>Без VPN</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>Без зарубежной карты</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>Есть бесплатный тариф</span></div>
       <div class="hero-models" id="heroModels"><span>Модели, которые внутри</span></div>
+      </div>
     </div>
   </div>
 

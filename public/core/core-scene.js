@@ -653,7 +653,7 @@
     // яркость на площадь не зависит от числа точек, плотности пикселей и размера Ядра — поэтому предел яркости один для всех устройств
     var sz = clamp(Math.sqrt(R / RREF), 0.8, 1.7) * Math.pow(NREF / n, 0.25), dens = (NREF / n) * (R * R) / (RREF * RREF) / (sz * sz) * S.scale.x * S.scale.x;
     var alpha = clamp((paper ? A_PAPER : A_DARK) * S.gain.x * S.bright.x * dens / Math.max(S.norm.x, 0.02) * flashGain(rr), 0, paper ? 2.4 : 4);
-    var heat = clamp(S.heat.x, 0, 1), c = Math.cos(ph.spin), s = Math.sin(ph.spin), vb = S.view.x + 0.05 * Math.sin(ph.b), cb = Math.cos(vb), sb = Math.sin(vb);
+    var heat = clamp(S.heat.x, 0, 1), yaw = ph.spin + (pose ? pose.turn : 0), c = Math.cos(yaw), s = Math.sin(yaw), vb = S.view.x + (pose ? pose.tilt : 0) + 0.05 * Math.sin(ph.b), cb = Math.cos(vb), sb = Math.sin(vb);
     gl.viewport(0, 0, G.w, G.h);
     gl.clearColor(theme.scene[0], theme.scene[1], theme.scene[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
     if (paper) gl.blendFunc(gl.DST_COLOR, gl.ZERO); else gl.blendFunc(gl.ONE, gl.ONE);
@@ -930,7 +930,7 @@
     place: function (p) { if (p == null) return typeof want.place === 'string' ? want.place : { x: want.place.x, y: want.place.y, size: want.place.size }; setPlace(p); return this; },
     pose: function (o) {
       if (o === null) pose = null;
-      else if (o) pose = { x: +o.x || 0, y: +o.y || 0, r: Math.max(1, +o.r || 1), gain: o.gain == null ? 1 : +o.gain, aura: o.aura == null ? 1 : +o.aura, lift: o.lift == null ? 0 : +o.lift };
+      else if (o) pose = { x: +o.x || 0, y: +o.y || 0, r: Math.max(1, +o.r || 1), gain: o.gain == null ? 1 : +o.gain, aura: o.aura == null ? 1 : +o.aura, lift: o.lift == null ? 0 : +o.lift, turn: +o.turn || 0, tilt: +o.tilt || 0 };
       loop.dirty = true; wake(); return this;
     },
     target: function (t, o) { setTarget(t, o); return this; },
