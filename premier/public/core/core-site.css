@@ -1,0 +1,184 @@
+/* Premier · Core — публичные страницы вне чата: лендинг, пробный доступ (редизайн, шаг 6).
+   Описание: /CORE-DESIGN-SYSTEM.md, раздел 16. Подключается после core-scene.css, перед стилем самой страницы
+   (core-landing.css, core-trial.css). Здесь общее для длинных страниц: основа, колонка, шапка, плита-секция,
+   заголовки секций, кнопки по старым зацепкам (.btn .pri .ghost), метки, плиты тарифов, вопросы-ответы, подвал.
+   Опирается на существующие id и классы разметки: скрипты страниц на них завязаны, меняется только вид.
+   Все значения — из токенов --core-*; свои величины страниц — --site-*. Своего размытия нет: стекло — классы core-glass.
+   Янтарь — у одного главного действия на экран; список селекторов проверяет тест (tests/core-landing.test.js). */
+
+.core{
+  --site-w:1120px;                                   /* ширина колонки страницы */
+  --site-gutter:var(--core-s-6);                     /* поле от края окна */
+  --site-gap:var(--core-s-24);                       /* шаг между секциями */
+  --site-pad:var(--core-s-12);                       /* поле плиты-секции */
+  --site-nav:56px;                                   /* высота шапки */
+  --site-plate:var(--core-fill-1);                   /* плита внутри плиты-секции: карточка, строка — без размытия */
+  --site-edge:inset 0 0 0 1px var(--core-line);      /* грань плиты */
+  --site-edge-2:inset 0 0 0 1px var(--core-line-2);  /* грань плиты, которая нажимается или выбрана */
+  --site-fs-display:clamp(2.25rem,1.1rem + 2.6vw,3.5rem);   /* заголовок страницы: одна ступень над шкалой 4.5, только для h1 публичной страницы */
+}
+@media (max-width:860px){.core{--site-gutter:var(--core-s-4);--site-gap:var(--core-s-16);--site-pad:var(--core-s-5)}}
+
+/* ---------- 0. Основа страницы ---------- */
+*,*::before,*::after{box-sizing:border-box}
+body,h1,h2,h3,h4,p,ul,ol,dl,dd,figure,blockquote{margin:0}
+ul,ol{padding:0;list-style:none}
+button,input,textarea,select{font:inherit;color:inherit}
+button{padding:0;border:0;background:none;cursor:var(--core-cursor-action)}
+a{color:inherit}
+svg{flex:none;width:var(--core-icon);height:var(--core-icon);stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+[hidden]{display:none!important}
+html.core{scroll-behavior:smooth;scroll-padding-top:calc(var(--site-nav) + var(--core-s-6))}
+@media (prefers-reduced-motion:reduce){html.core{scroll-behavior:auto}}
+html.core body{min-height:100vh;min-height:100dvh;overflow-x:clip;font:var(--core-human-3);color:var(--core-text-2)}
+.wrap{width:min(100% - 2 * var(--site-gutter),var(--site-w));margin-inline:auto}
+.sp{flex:1}
+main{display:block}
+
+/* ---------- 1. Шапка: дальнее стекло, плывёт у верхнего края ---------- */
+.nav{position:sticky;top:var(--core-s-2);z-index:50;width:min(100% - 2 * var(--core-s-2),var(--site-w) + 2 * var(--core-s-4));margin:var(--core-s-2) auto 0;border-radius:var(--core-r-lg)}
+.nav .wrap{display:flex;align-items:center;gap:var(--core-s-2);width:auto;min-height:var(--site-nav);padding:0 var(--core-s-2) 0 var(--core-s-4)}
+.brand{display:inline-flex;align-items:center;gap:var(--core-s-2);flex:none;color:var(--core-text);font:var(--core-human-3);font-weight:var(--core-w-3);letter-spacing:var(--core-track-4);text-decoration:none}
+.brand-spark{flex:none;width:18px;height:18px;background:currentColor;-webkit-mask:var(--core-glyph-spark) center/contain no-repeat;mask:var(--core-glyph-spark) center/contain no-repeat}
+.links{display:flex;align-items:center;gap:var(--core-s-05);min-width:0;margin-left:var(--core-s-4)}
+.links a,.tgnav{display:inline-flex;align-items:center;gap:var(--core-s-15);min-height:var(--core-h-md);padding:0 var(--core-s-3);border-radius:var(--core-r-sm);color:var(--core-text-2);font:var(--core-human-2);white-space:nowrap;text-decoration:none;transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.links a:hover,.tgnav:hover{background:var(--core-fill-1);color:var(--core-text)}}
+/* язык — машинным голосом, как в чате: выбранный ярче, без плашки */
+.language-switch,.lang-sw{display:inline-flex;align-items:center;flex:none;font:var(--core-machine-1);font-variant-ligatures:none}
+:is(.language-switch,.lang-sw) a{display:grid;place-items:center;min-width:var(--core-h-sm);min-height:var(--core-h-sm);padding:0 var(--core-s-1);border-radius:calc(var(--core-r-sm) - 2px);color:var(--core-text-3);letter-spacing:.04em;text-decoration:none;transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){:is(.language-switch,.lang-sw) a:hover{background:var(--core-fill-1);color:var(--core-text)}}
+:is(.language-switch,.lang-sw) a[aria-current=true]{color:var(--core-text)}
+
+/* ---------- 2. Кнопки по зацепкам разметки. Вид — как у core-btn; раскалена одна на экран (список ниже) ---------- */
+.btn,.ts-btn{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;gap:var(--core-s-2);flex:none;
+  min-height:var(--core-h-lg);min-width:var(--core-h-lg);padding:0 var(--core-s-5);border-radius:var(--core-r-sm);
+  background:var(--core-fill-2);box-shadow:var(--site-edge-2);color:var(--core-text);
+  font:var(--core-human-2);font-weight:var(--core-w-2);white-space:nowrap;text-decoration:none;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
+  transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,color var(--core-dur-1) linear,filter var(--core-dur-1) linear,transform var(--core-dur-1) var(--core-ease-out);
+}
+.btn svg{width:var(--core-icon);height:var(--core-icon)}
+@media (hover:hover){.btn:hover,.ts-btn:hover{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.btn:active,.ts-btn:active{background:var(--core-fill-1);transform:scale(.98)}
+.btn.sm{min-height:var(--core-h-md);min-width:var(--core-h-md);padding:0 var(--core-s-4)}
+.btn.ghost{background:transparent;color:var(--core-text-2)}
+@media (hover:hover){.btn.ghost:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.btn:disabled,.btn[aria-disabled=true]{color:var(--core-text-3);font-weight:var(--core-w-2);background:var(--core-fill-1);box-shadow:var(--site-edge);filter:none;transform:none;opacity:.72;cursor:not-allowed}
+.btn:disabled a{color:inherit}
+/* главное действие экрана — единственная раскалённая кнопка: первый экран, плита впереди в тарифах, последний экран, окно отзыва */
+:is(:is(.cta>.btn,.tier.hot>.btn,.pt-cta>.btn,#reviewForm>.btn,.final .btn,.final-card .btn).pri,[data-page=login] .card .btn):not(:disabled,[aria-disabled=true]){
+  color:var(--core-text-on-heat);font-weight:var(--core-w-3);
+  background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-4),var(--core-heat-3) 70%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 38%,transparent),0 6px 22px -8px color-mix(in srgb,var(--core-heat-3) 70%,transparent);
+}
+@media (hover:hover){:is(:is(.cta>.btn,.tier.hot>.btn,.pt-cta>.btn,#reviewForm>.btn,.final .btn,.final-card .btn).pri,[data-page=login] .card .btn):not(:disabled,[aria-disabled=true]):hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-heat-5) 64%,transparent),0 8px 28px -8px color-mix(in srgb,var(--core-heat-3) 92%,transparent);filter:brightness(1.09)}}
+:is(:is(.cta>.btn,.tier.hot>.btn,.pt-cta>.btn,#reviewForm>.btn,.final .btn,.final-card .btn).pri,[data-page=login] .card .btn):not(:disabled,[aria-disabled=true]):active{background:radial-gradient(110% 170% at 50% 50%,var(--core-heat-3),var(--core-heat-2) 78%);filter:none}
+@media (any-pointer:fine){:is(:is(.cta>.btn,.tier.hot>.btn,.pt-cta>.btn,#reviewForm>.btn,.final .btn,.final-card .btn).pri,[data-page=login] .card .btn):not(:disabled,[aria-disabled=true]){cursor:var(--core-cursor-action-on-heat)}}
+/* занято: три точки Ядра вместо подписи нельзя — скрипты пишут текст ожидания сами; кнопка просто гаснет */
+.btn[aria-busy=true]{pointer-events:none;filter:saturate(.6) brightness(.86);cursor:progress}
+
+/* ---------- 3. Секция — плита дальнего стекла на своей орбите; внутри неё плиты без размытия ---------- */
+main>section,main>.final{padding-top:var(--site-gap)}
+.site-plate{padding:var(--site-pad);border-radius:var(--core-r-lg)}
+/* плита встаёт на место вместе с прокруткой: положение задаёт сама прокрутка, не время */
+@keyframes site-arrive{from{opacity:.2;transform:perspective(1600px) translate3d(0,56px,-80px) rotateX(5deg)}}
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference) and (min-width:861px){
+    .js:not([data-core-motion=reduce]) .site-plate{animation:site-arrive linear both;animation-timeline:view();animation-range:entry 0% entry 380px}
+  }
+}
+.eyebrow,.visual-label{color:var(--core-text-3);font:var(--core-machine-1);font-variant-ligatures:none;letter-spacing:var(--core-track-caps);text-transform:uppercase}
+.h2{margin-top:var(--core-s-3);color:var(--core-text);font:var(--core-human-6);letter-spacing:var(--core-track-6);text-wrap:balance}
+.sub{max-width:62ch;margin-top:var(--core-s-3);color:var(--core-text-2);font:var(--core-human-3);text-wrap:pretty}
+.site-plate h3{color:var(--core-text);font:var(--core-human-4);letter-spacing:var(--core-track-4)}
+@media (max-width:860px){.h2{font:var(--core-human-5);letter-spacing:var(--core-track-5)}}
+/* текст прямо на сцене: под ним мягкая подложка цвета сцены — точки Ядра не проходят под буквами (правило 5) */
+.site-slab{position:relative;isolation:isolate}
+.site-slab::before{content:"";position:absolute;z-index:-1;inset:calc(var(--core-s-1) * -1) calc(var(--core-s-3) * -1);border-radius:var(--core-r-lg);background:var(--core-scene);box-shadow:0 0 var(--core-s-10) var(--core-s-4) var(--core-scene);pointer-events:none}
+
+/* ---------- 4. Метки: машинный голос ---------- */
+.tag,.os-tag,.newb,.badge-free,.rv-plan{display:inline-flex;align-items:center;gap:var(--core-s-15);min-height:20px;padding:0 var(--core-s-15);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);box-shadow:var(--site-edge);color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none;letter-spacing:0;white-space:nowrap;vertical-align:middle}
+
+/* ---------- 5. Тарифы — те же плиты, что в окне тарифов чата (раздел 15): три глубины, одна главная цена на плиту,
+      плита впереди ярче всех, и только у неё раскалённая кнопка ---------- */
+.lp-per{display:inline-flex;flex-wrap:wrap;gap:var(--core-s-05);max-width:100%;padding:var(--core-s-05);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:var(--site-edge)}
+.lp-per>button{display:inline-flex;align-items:center;justify-content:center;gap:var(--core-s-15);flex:1 1 auto;min-height:calc(var(--core-h-md) - 2 * var(--core-s-05));padding:0 var(--core-s-3);border-radius:calc(var(--core-r-sm) - 2px);color:var(--core-text-2);font:var(--core-human-2);font-weight:var(--core-w-2);white-space:nowrap;transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear}
+@media (hover:hover){.lp-per>button:hover{color:var(--core-text)}}
+.lp-per>button:where([aria-checked=true],.on){color:var(--core-text);background:var(--core-fill-3);box-shadow:var(--site-edge-2)}
+.lp-per>button small{color:var(--core-text-3);font:var(--core-machine-1)}
+.lp-per>button:where([aria-checked=true],.on) small{color:var(--core-text-2)}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--core-s-3)}
+.tiers.n4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tier{
+  position:relative;display:flex;flex-direction:column;gap:var(--core-s-3);min-width:0;padding:var(--core-s-5);border-radius:var(--core-r-md);
+  background:var(--site-plate);box-shadow:var(--site-edge);color:var(--core-text-2);text-align:left;transform:scale(.97);
+  transition:transform var(--core-dur-3) var(--core-ease-move),background-color var(--core-dur-2) linear,box-shadow var(--core-dur-2) linear;
+}
+/* глубина по порядку тарифов: чем выше тариф, тем ближе плита и светлее её грань */
+.tier:nth-child(n+2){box-shadow:var(--site-edge-2)}
+.tier:nth-child(n+3){box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-text-3) 70%,transparent)}
+.tier.hot{z-index:1;transform:none;background:var(--core-fill-2);box-shadow:inset 0 0 0 1px var(--core-text-2),var(--core-shadow-near)}
+.tier .tag{position:absolute;top:var(--core-s-4);right:var(--core-s-4)}
+.tier h3{display:flex;align-items:center;gap:var(--core-s-2);min-height:20px;color:var(--core-text);font:var(--core-machine-3);font-weight:var(--core-w-2);font-variant-ligatures:none;letter-spacing:0}
+.tier .d{margin-top:var(--core-s-1);color:var(--core-text-3);font:var(--core-human-1)}
+/* цена: одна главная цифра; старая цена — мелкой строкой над ней (человеческим голосом: ноль JetBrains Mono под чертой читается как восьмёрка), срок — мелко после */
+.tier .pr2{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:var(--core-s-2);color:var(--core-text);font:var(--core-machine-5);font-weight:var(--core-w-2);font-variant-ligatures:none;letter-spacing:var(--core-track-5);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tier .pr2 s{flex:0 0 100%;color:var(--core-text-3);font:var(--core-human-2);font-variant-numeric:tabular-nums;letter-spacing:0;text-decoration-thickness:1px}
+.tier .pr2:not(:has(s))::before{content:"";flex:0 0 100%;height:var(--core-lh-2)}
+.tier .pr2 small{color:var(--core-text-3);font:var(--core-machine-1);letter-spacing:0}
+.tier .pm-month,.tier .first-note{margin-top:calc(var(--core-s-2) * -1);color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none}
+.tier ul{display:flex;flex-direction:column;gap:var(--core-s-2);flex:1;padding-top:var(--core-s-3);border-top:1px solid var(--core-line);color:var(--core-text-2);font:var(--core-human-1)}
+.tier li{display:flex;gap:var(--core-s-2)}
+.tier li svg{width:14px;height:14px;margin-top:1px;color:var(--core-text-3)}
+.tier .btn{width:100%}
+.tier .tier-trial{display:flex;align-items:center;justify-content:center;min-height:var(--core-h-sm);margin-top:calc(var(--core-s-1) * -1);color:var(--core-text-2);font:var(--core-human-1);text-align:center;text-decoration:underline;text-decoration-color:var(--core-text-3);text-underline-offset:3px}
+@media (hover:hover){.tier .tier-trial:hover{color:var(--core-text)}}
+.tiers:has(.tier-trial) .tier:not(:has(.tier-trial))::after{content:"";flex:none;height:var(--core-h-sm);margin-top:calc(var(--core-s-1) * -1)}
+@media (max-width:1100px){.tiers.n4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){
+  .tiers,.tiers.n4{grid-template-columns:1fr}
+  .tier,.tier.hot{transform:none}
+  .tiers:has(.tier-trial) .tier:not(:has(.tier-trial))::after,.tier .pr2:not(:has(s))::before{content:none}
+  .lp-per{display:flex;width:100%}
+}
+
+/* ---------- 6. Вопросы и ответы: строки на волосяных линиях, все цвета из токенов (в светлой теме — тушь на бумаге) ---------- */
+.faq-list,.faq{margin-top:var(--core-s-6)}
+.faq-item{border-top:1px solid var(--core-line)}
+.faq-item:first-child{border-top:0}
+.faq-item summary{display:flex;align-items:center;justify-content:space-between;gap:var(--core-s-4);min-height:var(--core-h-lg);padding:var(--core-s-4) 0;color:var(--core-text);font:var(--core-human-3);font-weight:var(--core-w-2);list-style:none;cursor:var(--core-cursor-action);transition:color var(--core-dur-1) linear}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"";flex:none;width:var(--core-icon);height:var(--core-icon);background:var(--core-text-3);-webkit-mask:var(--core-glyph-chevron) center/contain no-repeat;mask:var(--core-glyph-chevron) center/contain no-repeat;transition:transform var(--core-dur-2) var(--core-ease-move),background-color var(--core-dur-1) linear}
+.faq-item summary svg{display:none}
+.faq-item[open] summary::after{transform:rotate(180deg);background:var(--core-text)}
+@media (hover:hover){.faq-item summary:hover::after{background:var(--core-text)}}
+.faq-item summary:focus-visible{outline:2px solid var(--core-focus);outline-offset:2px;border-radius:var(--core-r-sm)}
+.faq-a{max-width:72ch;padding:0 var(--core-s-10) var(--core-s-5) 0;color:var(--core-text-2);font:var(--core-human-3);text-wrap:pretty}
+.faq-a a,.tgline a,.hero-offer a,.legal a{color:var(--core-text);text-decoration:underline;text-decoration-color:var(--core-text-3);text-decoration-thickness:1px;text-underline-offset:3px}
+@media (hover:hover){.faq-a a:hover,.tgline a:hover,.hero-offer a:hover,.legal a:hover{text-decoration-color:currentColor}}
+
+/* ---------- 7. Последний экран и подвал ---------- */
+.tgline{display:flex;align-items:center;justify-content:center;gap:var(--core-s-2);color:var(--core-text-3);font:var(--core-human-1)}
+.tgline svg{width:14px;height:14px}
+footer{padding:var(--site-gap) 0 calc(var(--core-s-4) + env(safe-area-inset-bottom,0px))}
+footer .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2) var(--core-s-5);padding:var(--core-s-3) var(--core-s-5);border-radius:var(--core-r-md);color:var(--core-text-3);font:var(--core-human-1)}
+footer .brand{font:var(--core-human-2);font-weight:var(--core-w-3)}
+footer .brand-spark{width:14px;height:14px}
+footer a:not(.brand),.foot-review{color:var(--core-text-2);font:inherit;text-decoration:none;transition:color var(--core-dur-1) linear}
+@media (hover:hover){footer a:not(.brand):hover,.foot-review:hover{color:var(--core-text)}}
+#yr{font:var(--core-machine-1)}
+
+/* ---------- 8. Телефон ---------- */
+@media (max-width:1100px){.tgnav{display:none}}
+@media (max-width:940px){.links{display:none}}
+@media (max-width:860px){
+  .nav .wrap{padding:0 var(--core-s-15) 0 var(--core-s-3);gap:var(--core-s-1)}
+  .btn,.ts-btn{min-height:var(--core-h-lg)}
+  .btn.sm{min-height:var(--core-h-md);padding:0 var(--core-s-3)}
+  :is(.language-switch,.lang-sw) a{min-width:var(--core-h-md);min-height:var(--core-h-md)}
+  .faq-a{padding-right:0}
+  footer .wrap{gap:var(--core-s-2) var(--core-s-4)}
+  footer .sp{flex-basis:100%;height:0}
+}
+/* стекло непрозрачно там, где размытие под движущимся Ядром не по силам: ставит скрипт страницы (data-core-transparency) */
