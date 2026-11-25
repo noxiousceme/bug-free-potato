@@ -29,7 +29,7 @@
   const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
   addEventListener('load', () => idle(() => {
     const s = document.createElement('script');
-    s.src = '/core/core-scene.js?v=3';
+    s.src = '/core/core-scene.js?v=4';
     s.onload = () => { place(); addEventListener('resize', place); };
     document.body.appendChild(s);
   }));
