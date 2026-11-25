@@ -490,6 +490,7 @@
   // Core.lit(k): насколько ярким Ядро остаётся под окном (0 — как обычно, 1 — почти как в покое). Меняется только яркость:
   // накал и форма отступившего Ядра те же, поэтому расчёт предела яркости (12.10) остаётся в силе — потолок ниже яркости покоя.
   var lit = 0, LIT = 0.9;
+  var pose = null;   // Core.pose: прямое место в пикселях, или null — обычная пружина по Core.place
   var S = { x: sp(0), y: sp(0), lr: sp(5), gx: sp(0), gy: sp(0), glr: sp(5), gain: sp(1), aura: sp(1), lift: sp(0), scale: sp(1), ball: sp(0), heat: sp(0.48), bright: sp(1), spin: sp(0.07), breath: sp(0.03), turb: sp(1),
     pulse: sp(0), lean: sp(0), flow: sp(0), go: sp(1), view: sp(0.24), norm: sp(1), scatter: sp(0), flash: sp(0), kick: sp(0), ptr: sp(0), px: sp(0), py: sp(0), tx: sp(0), ty: sp(0) };
   var ph = { spin: 0, a: 0, b: 0, breath: 0, tw: 0, pulse: 0, flow: 0, dir: 0 };
@@ -554,8 +555,12 @@
     var st = STATES[cur.state], g = geo(cur.place), f = FORMS[want.form.form], i, k, busy = false, lr = Math.log(g.r);
     aim(now);
     // место: две пружины подряд — движение начинается и кончается мягко, одним непрерывным ходом
-    spring(S.gx, g.x, 5.4, dt); spring(S.gy, g.y, 5.4, dt); spring(S.glr, lr, 5.4, dt);
-    spring(S.x, S.gx.x, 5.4, dt); spring(S.y, S.gy.x, 5.4, dt); spring(S.lr, S.glr.x, 5.4, dt); spring(S.gain, g.gain, 4, dt); spring(S.aura, g.aura, 4, dt); spring(S.lift, g.lift, 4, dt);
+    // Core.pose(...) задаёт место напрямую (прокрутка страницы): пружин нет, Ядро идёт ровно за указателем
+    if (pose) { S.gx.x = S.x.x = pose.x; S.gy.x = S.y.x = pose.y; S.glr.x = S.lr.x = Math.log(pose.r); S.gain.x = pose.gain; S.aura.x = pose.aura; S.lift.x = pose.lift; g = pose; lr = Math.log(pose.r); }
+    else {
+      spring(S.gx, g.x, 5.4, dt); spring(S.gy, g.y, 5.4, dt); spring(S.glr, lr, 5.4, dt);
+      spring(S.x, S.gx.x, 5.4, dt); spring(S.y, S.gy.x, 5.4, dt); spring(S.lr, S.glr.x, 5.4, dt); spring(S.gain, g.gain, 4, dt); spring(S.aura, g.aura, 4, dt); spring(S.lift, g.lift, 4, dt);
+    }
     if (!near(S.x, g.x, 0.3) || !near(S.y, g.y, 0.3) || !near(S.lr, lr, 0.002)) busy = true;
     for (i = 0; i < SPR.length; i++) { k = SPR[i][0]; var to = st[k]; if (lit && k === 'bright' && cur.state === 'receded') to += (LIT - to) * lit; spring(S[k], to, SPR[i][1], dt); if (!near(S[k], to, 0.004)) busy = true; }
     spring(S.view, f.view, 2.2, dt); if (!near(S.view, f.view, 0.004)) busy = true;
@@ -629,7 +634,7 @@
     return mix(1, FLASH / st.bright * expoAt(expoL, rr) / expoAt(expoF, rr), clamp(S.flash.x, 0, 1));
   }
   function snap() {   // всё сразу в цель: первый кадр и «уменьшить движение»
-    var st = STATES[cur.state], g = geo(cur.place), i, k;
+    var st = STATES[cur.state], g = pose || geo(cur.place), i, k;
     aim(0);
     S.gx.x = S.x.x = g.x; S.gy.x = S.y.x = g.y; S.glr.x = S.lr.x = Math.log(g.r); S.gain.x = g.gain; S.aura.x = g.aura; S.lift.x = g.lift; S.view.x = FORMS[want.form.form].view; S.norm.x = even();
     for (i = 0; i < SPR.length; i++) { k = SPR[i][0]; S[k].x = st[k]; }
@@ -923,6 +928,11 @@
     form: function (id) { if (id == null) return want.form.form; if (FORMS[id]) setForm(shape(id)); return this; },
     model: function (name) { if (name == null) return want.form.model; setForm(formOf(name)); return this; },
     place: function (p) { if (p == null) return typeof want.place === 'string' ? want.place : { x: want.place.x, y: want.place.y, size: want.place.size }; setPlace(p); return this; },
+    pose: function (o) {
+      if (o === null) pose = null;
+      else if (o) pose = { x: +o.x || 0, y: +o.y || 0, r: Math.max(1, +o.r || 1), gain: o.gain == null ? 1 : +o.gain, aura: o.aura == null ? 1 : +o.aura, lift: o.lift == null ? 0 : +o.lift };
+      loop.dirty = true; wake(); return this;
+    },
     target: function (t, o) { setTarget(t, o); return this; },
     stage: function (o) { if (o == null) return { left: stg.l, right: stg.r, top: stg.t, bottom: stg.b }; setStage(o); return this; },
     quality: function (v) { if (v == null) return q.auto ? 'auto' : q.id; setQuality(v); return this; },

@@ -15,12 +15,12 @@ test('bilingual HTML routes, language cookie, errors and original content',async
  const s=await startServer(dir);t.after(async()=>{await s.stop();rm(dir);});
  await t.test('Russian default and English pages have accurate lang and no mixed cache',async()=>{
   for(const page of ['/','/index.html','/privacy.html','/login']){
-   const ru=await s.req('GET',page);assert.equal(ru.status,200);assert.match(ru.text,/<html lang="ru">/);
-   const en=await s.req('GET',page+'?lang=en');assert.equal(en.status,200);assert.match(en.text,/<html lang="en">/);assert.equal(en.headers.get('content-language'),'en');assert.match(en.headers.get('vary'),/Cookie/);assert.match(en.headers.get('cache-control'),/no-store/);assert.match(en.headers.get('set-cookie'),/premier_lang=en/);
+   const ru=await s.req('GET',page);assert.equal(ru.status,200);assert.match(ru.text,/<html lang="ru"[^>]*>/);
+   const en=await s.req('GET',page+'?lang=en');assert.equal(en.status,200);assert.match(en.text,/<html lang="en"[^>]*>/);assert.equal(en.headers.get('content-language'),'en');assert.match(en.headers.get('vary'),/Cookie/);assert.match(en.headers.get('cache-control'),/no-store/);assert.match(en.headers.get('set-cookie'),/premier_lang=en/);
    assert.match(en.text,/data-language="ru"/);assert.match(en.text,/data-language="en"/);
   }
   assert.match((await s.req('GET','/',{headers:{Cookie:'premier_lang=en'}})).text,/Top AI models in one place/);
-  assert.match((await s.req('GET','/?lang=invalid')).text,/<html lang="ru">/);
+  assert.match((await s.req('GET','/?lang=invalid')).text,/<html lang="ru"[^>]*>/);
  });
  await t.test('chat and developers remain protected; English assets load only UI code',async()=>{
   for(const page of ['/chat?lang=en','/developers?lang=en'])assert.equal((await s.req('GET',page)).status,302);
@@ -33,7 +33,7 @@ test('bilingual HTML routes, language cookie, errors and original content',async
   const pub=await s.req('POST','/api/publish',{token:'tok1',body:{title:'Сайт пользователя',html:'<!doctype html><title>Новый чат</title><p>Сохранить</p>'}});
   assert.equal(pub.status,200,pub.text);
   const pathname=pub.json.path;
-  const r=await s.req('GET',pathname,{headers:{Cookie:'premier_lang=en'}});assert.match(r.text,/<html lang="en">/);assert.match(r.text,/Made in 1 minute with Premier/);assert.match(r.text,/Сайт пользователя/);
+  const r=await s.req('GET',pathname,{headers:{Cookie:'premier_lang=en'}});assert.match(r.text,/<html lang="en"[^>]*>/);assert.match(r.text,/Made in 1 minute with Premier/);assert.match(r.text,/Сайт пользователя/);
   const raw=await s.req('GET',pathname+'.html',{headers:{'Sec-Fetch-Dest':'iframe','Sec-Fetch-Site':'same-origin',Cookie:'premier_lang=en'}});assert.match(raw.text,/<p>Сохранить<\/p>/);assert.ok(!raw.text.includes('Made in 1 minute'));
  });
  await t.test('English UI errors and English deletion confirmation are supported',async()=>{

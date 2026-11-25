@@ -1,4 +1,4 @@
-# Premier · Core — design system (redesign steps 1–5 of 8)
+# Premier · Core — design system (redesign steps 1–6 of 8 (step 6: landing only))
 
 This document describes the foundation that every later redesign step builds on.
 It is written for someone who has only this file and the files it names.
@@ -30,6 +30,7 @@ It is written for someone who has only this file and the files it names.
 | `tests/core-chat.test.js` | Automated checks of section 13. |
 | `public/core/core-work.css` | What the AI makes and does: result window, work log, code blocks, result cards and media, cloud computer, folder, helper (section 14). |
 | `public/core/core-dialogs.css` | Windows, menus, tooltips, notifications, confirmation capsules and the account, billing and team contents on the chat page (section 15). |
+| `public/core/core-landing.css`, `public/core/core-landing.js` | Landing page (step 6, section 16): styles on Core tokens; the scroll flight through `Core.pose`. |
 | `public/js/25-core-dialogs.js` | Glue: turns the shared window's `on` class into a Core window; plan cards, account sections, the model menu keys. No chat logic, no texts. |
 | `tests/core-dialogs.test.js` | Automated checks of section 15. |
 | `public/js/24-core-work.js` | Glue for section 14: divider, birth of the result window, phone switch, keyboard, terminal theme. No chat logic, no texts. |
@@ -1133,3 +1134,55 @@ The chat page no longer loads `tokens.css` or `chat-legacy.css`. It loads `core/
 - Real speech recognition and read-aloud, the real payment providers, real publishing and sign-in back ends.
 - Scrolling with a keyboard-focused tooltip on a page long enough to scroll (the empty chat cannot scroll).
 - Escape in the work menu when an upper Core menu or window consumed the key.
+
+## 16. Long marketing pages: the landing (step 6)
+
+Scope of this step: the landing page (`public/index.html`, `public/en/index.html`) and its stylesheet `core/core-landing.css` and script `core/core-landing.js`. The login and trial pages are not in this step's delivery; see the change note.
+
+### 16.1 Loading and first paint
+
+- The page loads only the Core base: `core-tokens.css`, `core-base.css`, `core-scene.css` and `core-landing.css`. `core-components.css` is not loaded, because the landing uses no `core-*` component classes; the components are styled by `core-landing.css` itself.
+- The scene is not in the first paint. `core-landing.js` appends `core-scene.js` after the window `load` event. Text, buttons and the demo are visible before the scene starts.
+- Without scripts the page is complete: the headline, lead, buttons, feature cards, FAQ (native `<details>`) and footer are in the HTML and visible. Reveal animations are gated by `.js` on `<html>`, which the first inline script sets. Pricing plates are filled by script from `/api/plans`, so with scripts disabled the pricing area is empty. This is pre-existing and needs a server-side render to fix; it was not changed in this step.
+- Without WebGL the scene falls back to its CSS glow (`core-scene.css`). The page is otherwise unchanged.
+
+### 16.2 The scroll flight
+
+`core-landing.js` keeps a list of keyframes: section selector, x and y as fractions of the window, radius as a fraction of the shorter side, and brightness. Keyframes are: hero, features, pricing, reviews, FAQ and the closing card. Some values are functions of the window width (the hero keyframe moves to the right on wide screens and to the top-right corner on phones, so the headline stays clear of the Core).
+
+On each scroll frame the script finds the section midpoints nearest to the viewport centre, interpolates between the two neighbours with `smoothstep`, and calls `Core.pose({x, y, r, gain})`. `Core.pose` is an additive mode of the scene (see 16.4): it writes the position directly, with no spring, so the Core follows the scroll position exactly.
+
+Rules that later steps must keep:
+- The flight never takes over scrolling: no snapping, no waiting for an animation, and nothing is scroll-jacked.
+- Under `prefers-reduced-motion` the script calls `Core.pose(null)` once and stops following the scroll. The Core stays still at its resting place.
+- The keyframes are measured again on resize and whenever the document height changes (a `ResizeObserver` on `body`), so content that loads later does not move the Core off its section.
+
+### 16.3 Patterns for long pages
+
+- One focus per screen: on the first screen the headline, one line, one primary button and the live demo. Facts, the model list and the demo tabs sit with the demo or after it.
+- Sections are glass plates on the Core (`.card`, `.feat`, `.tier`, `.faq-item`, `.rv-card`). Blur is never nested: the demo's inner panels have no `backdrop-filter`.
+- One amber action per screen: the hero's primary button, the highlighted plan's button, and the closing card. The trial offer's button is quiet (`.offer-strip .btn.pri`) so that the pricing section has one amber action.
+- Prices, counters and model names use the machine voice; the plan with the most features is marked by brighter edges, not colour.
+- No Unbounded anywhere. The old landing stylesheets (`tokens.css`, `landing-main.css`, `landing-visual.css`, `landing.css`, `language.css`) are no longer loaded. The files stay on disk until step 8.
+
+### 16.4 Shared file change: `Core.pose`
+
+`core/core-scene.js` gained one additive mode. `Core.pose({x, y, r, gain, aura, lift})` sets the Core's place in pixels and bypasses the spring between `Core.place` presets. `Core.pose(null)` returns to the presets. With no pose set, the scene behaves as before. Pages that load the scene must use cache version `?v=3`.
+
+### 16.5 Server contract (do not break)
+
+- `seo.js` fills `<!--SEO-->` in the head, reads the FAQ from `<details class="faq-item"><summary>…</summary><div class="faq-a">…</div></details>`, and builds the structured data from it. Keep that exact markup.
+- The page keeps `<title>` and `<meta name="description" content="…">` in the same form, because the server rewrites them.
+- Element ids used by the inline scripts and by `team-offer.js` (`heroOffer`, `heroModels`, `kickerText`, `demoTabs`, `tiers`, `perSeg`, `trialLine`, `offerStrip`, `teamStrip`, the review form ids, `siteFrame`, `siteBox`, and others) are unchanged.
+
+### 16.6 English page
+
+`scripts/build-i18n.py` cannot be used for the landing. Its catalogue is broken: the generated English `index.html` contains Russian text mixed into the English (for example the `<title>`). `public/en/index.html` is therefore edited by hand, with the same structure as the Russian page. `protrial.html` is not produced by the generator at all.
+
+### 16.7 Not verified in step 6
+
+- Real graphics hardware and real frame rates; the sandbox renders the Core in software at a few frames per second.
+- Safari, Firefox and a real phone; a screen reader; keyboard-only review of every section (the review dialog was not exercised).
+- Scroll-flight smoothness at phone size with a throttled CPU; the scene's own quality levels are the only mitigation in place.
+- Contrast of body text over the Core at every keyframe was checked by eye in screenshots, not measured.
+- First-paint timing on a slow phone was noisy in this sandbox (see the change note); the measured difference is not a result.
