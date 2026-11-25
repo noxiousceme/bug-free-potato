@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="core" data-page="landing" data-core-is="rest">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -8,26 +8,19 @@
 <link rel="manifest" href="/manifest-en.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Premier">
 <meta name="description" content="An AI that doesn’t just answer but runs code on its own cloud Linux machine: GPT, Gemini, DeepSeek, Kimi and Qwen in one chat. Websites, games and Python. Start for free.">
 <!--SEO-->
-<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <script>document.documentElement.classList.add('js')</script>
 <script>(function(){try{var r=new URLSearchParams(location.search).get('ref');if(r&&/^[a-zA-Z0-9_-]{8,64}$/.test(r)){localStorage.setItem('premier:ref',r);var u=new URL(location.href);u.searchParams.delete('ref');history.replaceState(null,'',u.pathname+u.search);}}catch(e){}})();</script>
-<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/unbounded-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/tokens.css?v=3">
-<link rel="stylesheet" href="/css/landing-main.css?v=1">
-<link rel="stylesheet" href="/language.css?v=1">
+<link rel="preload" href="/fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2">
+<link rel="stylesheet" href="/core/core-site.css?v=1">
+<link rel="stylesheet" href="/core/core-landing.css?v=1">
 <script src="/language.js?v=2"></script>
-<style>.mark{background:transparent}</style>
-<link rel="stylesheet" href="/css/landing-visual.css?v=1" id="premier-visual-v4">
-<link rel="stylesheet" href="/landing.css?v=8">
-<style>
-/* paid trial and first-purchase discount */
-.hero-offer{margin:18px auto 0;font-size:14.5px;color:var(--muted)}.hero-offer b{color:var(--text);font-weight:650}.hero-offer a{color:var(--accent-l);text-decoration:underline;text-underline-offset:3px}
-.offer-strip{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;max-width:900px;margin:40px auto -26px;padding:18px 22px;border:1px solid rgba(114,188,143,.5);border-radius:18px;background:linear-gradient(180deg,rgba(114,188,143,.13),transparent 85%),var(--card);text-align:left}
-.offer-strip>div{flex:1;min-width:240px}.offer-strip .os-tag{display:inline-block;font-size:12px;font-weight:600;background:#2f9e6b;color:#fff;border-radius:7px;padding:2px 9px;margin-bottom:8px}
-.offer-strip b{display:block;font-size:19px;font-weight:650;line-height:1.3}.offer-strip span:not(.os-tag){display:block;color:var(--muted);font-size:14.5px;margin-top:4px}.offer-strip .btn{flex:none}
-.tier .pr2 s{font-size:22px;color:var(--dim);font-weight:500;margin-right:8px;letter-spacing:0}.tier .first-note{margin-top:-8px;font-size:13.5px;color:#72BC8F}
-</style>
+<script defer src="/core/core-ui.js?v=2"></script><script defer src="/core/core-scene.js?v=3"></script>
+<script defer src="/js/26-core-landing.js?v=1"></script>
 </head>
 <body>
+<div class="core-scene" aria-hidden="true"></div>
 <svg style="display:none"><defs>
 <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
 <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
@@ -45,9 +38,9 @@
 <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
 </defs></svg>
 
-<header class="nav" id="nav">
+<header class="nav core-glass core-glass--far" id="nav" data-core-at="top">
   <div class="wrap">
-    <a href="/" class="brand"><span class="mark"><img src="/icon-p-amber.svg" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></span>Premier</a>
+    <a href="/" class="brand"><span class="brand-spark" aria-hidden="true"></span>Premier</a>
     <nav class="links" aria-label="Sections"><a href="#features">Features</a><a href="#preview">Websites</a><a href="#pricing">Plans</a><a href="#reviews">Reviews</a><a href="#faq">FAQ</a><a href="/blog?lang=en">Guides</a></nav>
     <div class="sp"></div>
     <nav class="language-switch" aria-label="Interface language"><a href="?lang=ru" data-language="ru" aria-label="Russian">RU</a><a href="?lang=en" data-language="en" aria-label="English">EN</a></nav>
@@ -57,25 +50,24 @@
 </header>
 
 <main>
-  <div class="hero">
-    <div class="glow" aria-hidden="true"></div>
+  <div class="hero" data-flight="84 33 .29 0 .1" data-flight-phone="80 15.5 .17 0 0">
     <div class="wrap">
-      <div class="hero-kicker"><span class="kicker-mark" aria-hidden="true"></span><span id="kickerText">Top AI models in one place</span></div>
-      <h1>Write code, build websites<br><span>and solve tasks in one chat</span></h1>
-      <p class="lead">From idea to a finished result: answers, code, websites and games.</p>
-      <div class="cta"><a href="/chat" class="btn pri">Try for free<svg aria-hidden="true"><use href="#i-arrow"/></svg></a><a href="#features" class="btn ghost">Explore features</a></div>
-      <p class="hero-offer" id="heroOffer" hidden></p>
-      <div class="hero-facts"><span><svg aria-hidden="true"><use href="#i-check"/></svg>No VPN needed</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>No foreign card needed</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>Free plan available</span></div>
-      <div class="hero-models" id="heroModels"><span>Models inside</span></div>
-      <div class="demo-tabs" id="demoTabs" role="tablist" aria-label="Examples">
-        <button type="button" class="on" data-demo="0">Snake game</button>
-        <button type="button" data-demo="1">Website</button>
-        <button type="button" data-demo="2">Python code</button>
+      <div class="hero-copy">
+        <div class="hero-kicker site-slab"><span class="kicker-mark" aria-hidden="true"></span><span id="kickerText">Top AI models in one place</span></div>
+        <h1 class="site-slab">Write code, build websites<br><span>and solve tasks in one chat</span></h1>
+        <p class="lead site-slab">From idea to a finished result: answers, code, websites and games.</p>
+        <div class="cta"><a href="/chat" class="btn pri">Try for free<svg aria-hidden="true"><use href="#i-arrow"/></svg></a><a href="#features" class="btn ghost">Explore features</a></div>
+        <p class="hero-offer site-slab" id="heroOffer" hidden></p>
       </div>
-      <div class="card show rv" id="preview" aria-label="Website creation demo">
+      <div class="card show rv core-glass" id="preview" aria-label="Website creation demo" data-flight="88 15 .3 .45 .1" data-flight-phone="90 8 .3 .4 0">
+        <div class="demo-tabs" id="demoTabs" role="tablist" aria-label="Examples">
+          <button type="button" class="on" data-demo="0">Snake game</button>
+          <button type="button" data-demo="1">Website</button>
+          <button type="button" data-demo="2">Python code</button>
+        </div>
         <div class="show-chat">
           <div class="u" id="dPrompt">Create a beautiful realistic snake game: grass, apples and smooth movement</div>
-          <div class="a"><span class="mark"><img src="/icon-p-amber.svg" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></span><div><div class="who">Premier</div><span id="dAnswer">Done — a snake game on a living field: smooth movement, shiny apples, particles, a high score, and arrow or swipe controls. It plays itself while you are away.</span>
+          <div class="a"><div><div class="who">Premier</div><span id="dAnswer">Done — a snake game on a living field: smooth movement, shiny apples, particles, a high score, and arrow or swipe controls. It plays itself while you are away.</span>
             <div class="art"><span class="ic"><svg><use href="#i-globe"/></svg></span><span><b id="dName">Snake</b><small id="dDesc">Game · HTML</small></span><em id="dState">Opened</em></div></div></div>
           <div class="u" id="dFollow">Add a speed boost every 5 apples</div>
           <div class="show-input"><input id="dInput" type="text" maxlength="300" placeholder="Type your own website or question idea..." autocomplete="off"><button id="dSend" type="button" aria-label="Send to chat"><svg><use href="#i-arrow"/></svg></button></div>
@@ -85,11 +77,15 @@
           <div class="site" id="siteBox"><iframe id="siteFrame" title="Example: Snake game" src="/demo/snake.html?v=2" sandbox="allow-scripts"></iframe><div class="ld"><div><i></i>Loading…</div></div></div>
         </div>
       </div>
+      <div class="hero-proof core-glass core-glass--far">
+        <div class="hero-facts"><span><svg aria-hidden="true"><use href="#i-check"/></svg>No VPN needed</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>No foreign card needed</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>Free plan available</span></div>
+        <div class="hero-models" id="heroModels"><span>Models inside</span></div>
+      </div>
     </div>
   </div>
 
-  <section id="features">
-    <div class="wrap">
+  <section id="features" data-flight="6 44 .46 1.1 .22" data-flight-through="1" data-flight-phone="8 30 .62 .9 0">
+    <div class="wrap site-plate core-glass core-glass--far">
       <div class="eyebrow rv">Features</div>
       <h2 class="h2 rv">Everything you need to work with AI</h2>
       <p class="sub rv">No tab switching, multiple subscriptions or complicated setup.</p>
@@ -110,8 +106,8 @@
     </div>
   </section>
 
-  <section id="pricing" style="padding-top:40px">
-    <div class="wrap center">
+  <section id="pricing" data-flight="50 62 .27 2.3 -.2" data-flight-phone="92 62 .5 1.8 0">
+    <div class="wrap center site-plate core-glass core-glass--far">
       <div class="eyebrow rv">Plans</div>
       <h2 class="h2 rv">Start for free. Upgrade when you need more.</h2>
       <p class="sub rv" id="trialLine">No auto-renewal: pay for a month and use it for a month.</p>
@@ -123,8 +119,8 @@
     </div>
   </section>
 
-  <section id="reviews" aria-labelledby="reviewTitle">
-    <div class="wrap center">
+  <section id="reviews" aria-labelledby="reviewTitle" data-flight="93 38 .4 3.3 .2" data-flight-phone="6 40 .55 2.6 0">
+    <div class="wrap center site-plate core-glass core-glass--far">
       <div class="visual-label">COMMUNITY</div>
       <h2 class="h2" id="reviewTitle">Reviews</h2>
       <p class="sub">What users say</p>
@@ -134,8 +130,8 @@
     </div>
   </section>
 
-  <section id="faq" aria-labelledby="faqTitle">
-    <div class="wrap center">
+  <section id="faq" aria-labelledby="faqTitle" data-flight="7 64 .36 4.3 -.15" data-flight-phone="94 70 .5 3.4 0">
+    <div class="wrap center site-plate core-glass core-glass--far">
       <div class="visual-label">FAQ</div>
       <h2 class="h2" id="faqTitle">Frequently asked questions</h2>
       <p class="sub">Payments, limits and plans in short</p>
@@ -153,10 +149,10 @@
     </div>
   </section>
 
-  <div class="final">
+  <div class="final" data-flight="50 52 .5 5.4 0" data-flight-through=".35" data-flight-phone="50 46 .78 4.2 0">
     <div class="wrap">
-      <div class="card rv"><div class="glow"></div>
-        <div style="position:relative">
+      <div class="card rv site-plate core-glass" data-core-at="core">
+        <div>
           <h2 class="h2">Start with one good question</h2>
           <p class="sub">Premier will break the rest into clear steps.</p>
           <a href="/chat" class="btn pri">Open Premier<svg><use href="#i-arrow"/></svg></a>
@@ -182,11 +178,11 @@
     <button class="btn pri" id="reviewSubmit" type="submit">Submit review</button>
   </form>
 </dialog>
-<div class="rv-toast" id="reviewToast" role="status" aria-live="polite"></div>
+<div class="rv-toast core-glass core-glass--near" id="reviewToast" role="status" aria-live="polite"></div>
 
 <footer>
-  <div class="wrap">
-    <a href="/" class="brand" style="font-size:15px"><span class="mark" style="width:22px;height:22px"><img src="/icon-p-amber.svg" alt="" style="width:100%;height:100%;display:block"></span>Premier</a>
+  <div class="wrap core-glass core-glass--far" data-core-at="bottom">
+    <a href="/" class="brand"><span class="brand-spark" aria-hidden="true"></span>Premier</a>
     <span>© <span id="yr"></span></span>
     <div class="sp"></div>
     <a href="https://t.me/eidevip" target="_blank" rel="noopener">Telegram</a><button type="button" class="foot-review" id="footReview" hidden></button><a href="/blog?lang=en">Guides</a><a href="/privacy">Privacy</a><a href="#">Terms</a>
@@ -206,8 +202,7 @@
   const top = Math.max(...d.plans.map((p) => p.tier)), lim = (n, a, b, c, u, tail) => n == null ? u : `${n} ${pl(n, a, b, c)}${tail}`;
   const hm = document.getElementById('heroModels');
   if (hm && d.models && d.models.length) {
-    const dots = ['#E8590C', '#2F9E6B', '#C98A00', '#8E5BD0', '#1F8FA3', '#D64545', '#6B635A', '#C2417F', '#3E7C59'];
-    hm.insertAdjacentHTML('beforeend', d.models.map((m, i) => `<span class="hm-chip" style="--dot:${dots[i % dots.length]}"><i aria-hidden="true"></i>${esc(m.name)}</span>`).join(''));
+    hm.insertAdjacentHTML('beforeend', d.models.map((m) => `<span class="hm-chip"><span class="core-mini core-mini--sm" data-core-model="${esc(m.name)}"></span>${esc(m.name)}</span>`).join(''));
     const kt = document.getElementById('kickerText');
     if (kt) { const n = d.models.length; kt.textContent = n + (n === 1 ? ' top AI model' : ' top AI models') + ' in one place'; }
   }
