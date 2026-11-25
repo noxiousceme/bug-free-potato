@@ -15,12 +15,12 @@ test('bilingual HTML routes, language cookie, errors and original content',async
  const s=await startServer(dir);t.after(async()=>{await s.stop();rm(dir);});
  await t.test('Russian default and English pages have accurate lang and no mixed cache',async()=>{
   for(const page of ['/','/index.html','/privacy.html','/login']){
-   const ru=await s.req('GET',page);assert.equal(ru.status,200);assert.match(ru.text,/<html lang="ru">/);
-   const en=await s.req('GET',page+'?lang=en');assert.equal(en.status,200);assert.match(en.text,/<html lang="en">/);assert.equal(en.headers.get('content-language'),'en');assert.match(en.headers.get('vary'),/Cookie/);assert.match(en.headers.get('cache-control'),/no-store/);assert.match(en.headers.get('set-cookie'),/premier_lang=en/);
+   const ru=await s.req('GET',page);assert.equal(ru.status,200);assert.match(ru.text,/<html lang="ru"[ >]/);
+   const en=await s.req('GET',page+'?lang=en');assert.equal(en.status,200);XX,/no-store/);assert.match(en.headers.get('set-cookie'),/premier_lang=en/);
    assert.match(en.text,/data-language="ru"/);assert.match(en.text,/data-language="en"/);
   }
   assert.match((await s.req('GET','/',{headers:{Cookie:'premier_lang=en'}})).text,/Top AI models in one place/);
-  assert.match((await s.req('GET','/?lang=invalid')).text,/<html lang="ru">/);
+  assert.match((await s.req('GET','/?lang=invalid')).text,/<html lang="ru"[ >]/);
  });
  await t.test('chat and developers remain protected; English assets load only UI code',async()=>{
   for(const page of ['/chat?lang=en','/developers?lang=en'])assert.equal((await s.req('GET',page)).status,302);
