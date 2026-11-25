@@ -1,0 +1,82 @@
+/* Premier · Core — вход (редизайн, шаг 6). Описание: /CORE-DESIGN-SYSTEM.md, раздел 16.
+   Подключается после core-site.css. Ядро во весь экран (место full), форма — одна стеклянная плита средней глубины
+   прямо перед ним. Состояния: выбор способа входа, ожидание, вход не настроен, регистрация закрыта, ошибка,
+   второй шаг (код из приложения): ввод, проверка, ошибка, время вышло, вход по резервному коду.
+   Разметку второго шага строит скрипт страницы (.card): вид задан по её зацепкам. Все значения — из токенов --core-*.
+   Раскалённая кнопка здесь одна — «Войти» на втором шаге и «Продолжить» после него; вход через Google и GitHub —
+   светом, не янтарём (правило «включено — это свет»): у них свои знаки, а главный из двух — светлая плита. */
+
+html[data-page=login] body{display:grid;place-items:center;padding:var(--core-s-4)}
+.wrap2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:min(100%,880px);border-radius:var(--core-r-lg);transition:opacity var(--core-dur-3) var(--core-ease-in),transform var(--core-dur-3) var(--core-ease-in)}
+/* вход удался: камера влетает в Ядро, плита уходит назад (скрипт ставит data-gate; при «уменьшить движение» не ставит) */
+html[data-gate=in] .wrap2{opacity:0;transform:scale(.94);pointer-events:none}
+
+/* ---------- форма ---------- */
+.box{display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:start;min-width:0;padding:var(--core-s-10)}
+.box>*{grid-column:1 / -1}
+.box>.brand{grid-column:1;grid-row:1;justify-self:start;align-self:center}
+.language-login{grid-column:2;grid-row:1}
+.card{margin-top:var(--core-s-12)}
+.card h1{color:var(--core-text);font:var(--core-human-5);letter-spacing:var(--core-track-5)}
+.card .sub{margin-top:var(--core-s-2);max-width:none;color:var(--core-text-2);font:var(--core-human-2)}
+.card .sub b{color:var(--core-text);font:var(--core-machine-2);font-weight:var(--core-w-2)}
+/* способ входа: стеклянные кнопки; первая из показанных — светлая плита */
+.gbtn{
+  display:flex;align-items:center;justify-content:center;gap:var(--core-s-3);width:100%;min-height:var(--core-s-12);margin-top:var(--core-s-2);padding:0 var(--core-s-5);border-radius:var(--core-r-sm);
+  background:var(--core-fill-2);box-shadow:var(--site-edge-2);color:var(--core-text);font:var(--core-human-3);font-weight:var(--core-w-2);text-decoration:none;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
+  transition:background-color var(--core-dur-1) linear,box-shadow var(--core-dur-1) linear,filter var(--core-dur-1) linear,opacity var(--core-dur-2) linear,transform var(--core-dur-1) var(--core-ease-out);
+}
+.card>.gbtn:first-of-type{margin-top:var(--core-s-6)}
+.gbtn svg{width:18px;height:18px;stroke:none}
+@media (hover:hover){.gbtn:hover{background:var(--core-fill-3);box-shadow:inset 0 0 0 1px var(--core-text-3)}}
+.gbtn:active{transform:scale(.98)}
+#gbtn:not(.off),#gbtn[hidden]+#ghbtn:not(.off){background:var(--core-on);box-shadow:none;color:var(--core-on-ink)}
+@media (hover:hover){#gbtn:not(.off):hover,#gbtn[hidden]+#ghbtn:not(.off):hover{background:var(--core-on);box-shadow:none;filter:brightness(.92)}}
+.gbtn[aria-busy=true]{opacity:.72;pointer-events:none;cursor:progress}
+.gbtn.off{background:var(--core-fill-1);box-shadow:var(--site-edge);color:var(--core-text-3);cursor:not-allowed}
+.gbtn.off svg{opacity:.5;filter:grayscale(1)}
+@media (hover:hover){.gbtn.off:hover{background:var(--core-fill-1);box-shadow:var(--site-edge)}}
+.gbtn.off:active{transform:none}
+/* ошибка и пояснение */
+.err{margin-top:var(--core-s-4);padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-sm);background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 34%,transparent);color:var(--core-bad);font:var(--core-human-2)}
+.err.info{background:var(--core-warn-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-warn) 34%,transparent);color:var(--core-warn)}
+.err:empty,.note:empty{display:none}
+.note{margin-top:var(--core-s-4);color:var(--core-text-3);font:var(--core-human-1)}
+.note a{color:var(--core-text);text-decoration:underline;text-decoration-color:var(--core-text-3);text-decoration-thickness:1px;text-underline-offset:3px}
+@media (hover:hover){.note a:hover{text-decoration-color:currentColor}}
+/* второй шаг: код — машинным голосом */
+.card form{display:flex;flex-direction:column;gap:var(--core-s-2);margin-top:var(--core-s-6)}
+.card label{display:flex;flex-direction:column;gap:var(--core-s-15)}
+.card label span{color:var(--core-text-2);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.card input{width:100%;min-height:var(--core-s-12);padding:0 var(--core-s-4);border:0;border-radius:var(--core-r-sm);outline:0;background:var(--core-well);box-shadow:var(--site-edge-2);color:var(--core-text);font:var(--core-machine-4);font-variant-ligatures:none;letter-spacing:.12em;caret-color:var(--core-caret);transition:box-shadow var(--core-dur-1) linear,opacity var(--core-dur-2) linear}
+.card input::placeholder{color:var(--core-text-3);opacity:.6}
+.card input:focus-visible{box-shadow:inset 0 0 0 1px var(--core-focus)}
+.card input:disabled{opacity:.5;cursor:not-allowed}
+.card form:has(.ferr:not(:empty)) input:not(:disabled){box-shadow:inset 0 0 0 1px var(--core-bad)}
+.ferr{min-height:var(--core-lh-1);color:var(--core-bad);font:var(--core-human-1)}
+.card .btn{width:100%;min-height:var(--core-s-12);margin-top:var(--core-s-2);font:var(--core-human-3);font-weight:var(--core-w-3)}
+.legal{margin-top:var(--core-s-10);color:var(--core-text-3);font:var(--core-human-1)}
+.back{justify-self:start;margin-top:var(--core-s-3);color:var(--core-text-2);font:var(--core-human-2);text-decoration:none;transition:color var(--core-dur-1) linear}
+@media (hover:hover){.back:hover{color:var(--core-text)}}
+
+/* ---------- что внутри: та же плита, вторая половина, тише ---------- */
+.pitch{display:flex;flex-direction:column;justify-content:center;gap:var(--core-s-4);min-width:0;padding:var(--core-s-10);border-left:1px solid var(--core-line)}
+.pitch h2{color:var(--core-text);font:var(--core-human-5);letter-spacing:var(--core-track-5)}
+.pitch h2 span{color:var(--core-text-2)}
+.pitch p{color:var(--core-text-2);font:var(--core-human-3)}
+.pitch ul{display:flex;flex-direction:column;gap:var(--core-s-4);margin-top:var(--core-s-2)}
+.pitch li{display:flex;align-items:flex-start;gap:var(--core-s-3)}
+.pitch li i{display:grid;place-items:center;flex:none;width:var(--core-h-md);height:var(--core-h-md);border-radius:var(--core-r-sm);background:var(--core-fill-2);box-shadow:var(--site-edge);color:var(--core-text)}
+.pitch li span{display:flex;flex-direction:column;color:var(--core-text-2);font:var(--core-human-2)}
+.pitch li b{color:var(--core-text);font-weight:var(--core-w-2)}
+
+@media (max-width:860px){
+  html[data-page=login] body{place-items:start center;padding:var(--core-s-2)}
+  .wrap2{grid-template-columns:minmax(0,1fr);width:min(100%,480px);margin-block:auto}
+  .box{padding:var(--core-s-6) var(--core-s-5)}
+  .card{margin-top:var(--core-s-8)}
+  .card input{font-size:var(--core-fsm-4)}
+  .legal{margin-top:var(--core-s-8)}
+  .pitch{padding:var(--core-s-6) var(--core-s-5);border-left:0;border-top:1px solid var(--core-line)}
+}

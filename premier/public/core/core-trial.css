@@ -1,0 +1,79 @@
+/* Premier · Core — страница пробного дня Pro (редизайн, шаг 6). Описание: /CORE-DESIGN-SYSTEM.md, раздел 16.
+   Подключается после core-site.css. Первый экран — крупный план плиты тарифа: одна плита, одна цена, одно действие;
+   Ядро прямо за ней. Ниже — плиты-секции: что входит, сравнение, шаги, вопросы, последний экран.
+   Опирается на существующие id и классы (скрипт страницы меняет текст и классы кнопки: .pri → .ghost, :disabled,
+   aria-busy; показывает таймер .active и статус .pt-status.ok / .err). Все значения — из токенов --core-*. */
+
+/* ---------- 1. Плита предложения ---------- */
+.hero{padding-top:clamp(var(--core-s-10),9vh,var(--core-s-24))}
+.pt-plate{display:flex;flex-direction:column;align-items:flex-start;width:min(100% - 2 * var(--site-gutter),640px);padding:var(--core-s-10);border-radius:var(--core-r-lg)}
+.hero-kicker{display:inline-flex;align-items:center;gap:var(--core-s-15);min-height:20px;padding:0 var(--core-s-15);border-radius:calc(var(--core-r-sm) - 2px);background:var(--core-fill-2);box-shadow:var(--site-edge);color:var(--core-text-2);font:var(--core-machine-1);font-variant-ligatures:none}
+.kicker-dot{flex:none;width:8px;height:8px;background:currentColor;-webkit-mask:var(--core-glyph-spark) center/contain no-repeat;mask:var(--core-glyph-spark) center/contain no-repeat}
+/* название тарифа — строкой, цена — одна главная цифра плиты, машинным голосом */
+.pt-plate h1{margin-top:var(--core-s-5);color:var(--core-text-2);font:var(--core-machine-3);font-weight:var(--core-w-2);font-variant-ligatures:none}
+.pt-plate h1 span{display:block;margin-top:var(--core-s-2);color:var(--core-text);font:var(--core-w-2) var(--site-fs-display)/1.05 var(--core-font-machine);font-variant-ligatures:none;letter-spacing:var(--core-track-6)}
+.lead{max-width:48ch;margin-top:var(--core-s-4);color:var(--core-text-2);font:var(--core-human-3);text-wrap:pretty}
+.pt-timer-wrap{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--core-s-1) var(--core-s-3);width:100%;margin-top:var(--core-s-6);padding-top:var(--core-s-5);border-top:1px solid var(--core-line)}
+.pt-timer{color:var(--core-text-3);font:var(--core-machine-4);font-variant-ligatures:none;font-variant-numeric:tabular-nums;transition:color var(--core-dur-2) linear}
+.pt-timer.active{color:var(--core-text)}
+.pt-timer-label{color:var(--core-text-3);font:var(--core-human-1)}
+.pt-cta{display:flex;flex-direction:column;align-items:stretch;gap:var(--core-s-3);width:100%;margin-top:var(--core-s-6)}
+.pt-cta .btn{min-height:var(--core-s-12);font:var(--core-human-3);font-weight:var(--core-w-3);white-space:normal;text-align:center}
+.pt-cta .btn.ghost{background:var(--core-fill-2);color:var(--core-text);font-weight:var(--core-w-2)}
+.btn a{color:inherit;text-decoration:underline;text-underline-offset:3px;pointer-events:auto}
+.pt-note{color:var(--core-text-3);font:var(--core-human-1);text-align:center}
+.pt-status{width:100%;margin-top:var(--core-s-4);padding:var(--core-s-3) var(--core-s-4);border-radius:var(--core-r-sm);background:var(--site-plate);box-shadow:var(--site-edge);color:var(--core-text-2);font:var(--core-human-2)}
+.pt-status b{display:block;color:var(--core-text);font-weight:var(--core-w-3)}
+.pt-status.ok{background:var(--core-ok-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-ok) 34%,transparent)}
+.pt-status.ok b{color:var(--core-ok)}
+.pt-status.err{background:var(--core-bad-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--core-bad) 34%,transparent);color:var(--core-bad)}
+.pt-status.err b{color:var(--core-bad)}
+
+/* ---------- 2. Что входит: шесть плит, числа — машинным голосом ---------- */
+.feat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--core-s-3);margin-top:var(--core-s-8)}
+.feat-card{display:grid;grid-template-columns:auto minmax(0,1fr);align-content:start;gap:var(--core-s-2) var(--core-s-3);min-width:0;padding:var(--core-s-5);border-radius:var(--core-r-md);background:var(--site-plate);box-shadow:var(--site-edge);text-align:left}
+.feat-card>*{grid-column:1 / -1}
+.feat-ic{display:grid;place-items:center;grid-column:1;width:var(--core-h-md);height:var(--core-h-md);border-radius:var(--core-r-sm);background:var(--core-fill-2);box-shadow:var(--site-edge);color:var(--core-text)}
+.feat-ic svg{width:18px;height:18px}
+.feat-num{grid-column:2;align-self:center;justify-self:end;color:var(--core-text);font:var(--core-machine-5);font-weight:var(--core-w-2);font-variant-ligatures:none;font-variant-numeric:tabular-nums;letter-spacing:var(--core-track-5)}
+.feat-card p{color:var(--core-text-2);font:var(--core-human-2);text-wrap:pretty}
+
+/* ---------- 3. Сравнение: таблица на волосяных линиях; столбец Pro — светлее, не цветом ---------- */
+.cmp-table{width:100%;margin-top:var(--core-s-8);border-collapse:separate;border-spacing:0;color:var(--core-text-2);font:var(--core-human-2)}
+.cmp-table :is(th,td){padding:var(--core-s-3) var(--core-s-4);border-top:1px solid var(--core-line);text-align:center;vertical-align:middle}
+.cmp-table thead th{border-top:0;color:var(--core-text-3);font:var(--core-human-1);font-weight:var(--core-w-2)}
+.cmp-table :is(th,td):first-child{width:50%;padding-left:0;color:var(--core-text);text-align:left}
+.cmp-table thead th:first-child{color:var(--core-text-3)}
+.cmp-table td:not(:first-child){font:var(--core-machine-2);font-variant-ligatures:none}
+.cmp-table .pro-col{background:var(--core-fill-1);color:var(--core-text)}
+.cmp-table thead .pro-col{border-radius:var(--core-r-sm) var(--core-r-sm) 0 0;color:var(--core-text)}
+.cmp-table tbody tr:last-child .pro-col{border-radius:0 0 var(--core-r-sm) var(--core-r-sm)}
+.cmp-table .ck{display:inline-flex;align-items:center;gap:var(--core-s-15);color:var(--core-text)}
+.cmp-table .ck svg{width:14px;height:14px;color:var(--core-ok)}
+.cmp-table .no{display:inline-flex;color:var(--core-text-3)}
+.cmp-table .no svg{width:14px;height:14px}
+
+/* ---------- 4. Три шага ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--core-s-3);margin-top:var(--core-s-8)}
+.step{display:flex;flex-direction:column;gap:var(--core-s-2);min-width:0;padding:var(--core-s-5);border-radius:var(--core-r-md);background:var(--site-plate);box-shadow:var(--site-edge);text-align:left}
+.step-num{color:var(--core-text-3);font:var(--core-machine-4);font-variant-ligatures:none}
+.step p{color:var(--core-text-2);font:var(--core-human-2);text-wrap:pretty}
+
+/* ---------- 5. Последний экран ---------- */
+.final-card{display:flex;flex-direction:column;align-items:center;gap:0;padding:var(--core-s-16) var(--site-pad);text-align:center}
+.badge-free i{width:6px;height:6px;border-radius:50%;background:var(--core-text-3)}
+.final-card .h2{margin-top:var(--core-s-4)}
+.final-card .sub{margin-inline:auto}
+.final-card .btn{margin-top:var(--core-s-8);min-height:var(--core-s-12);padding:0 var(--core-s-6);font:var(--core-human-3);font-weight:var(--core-w-3);white-space:normal}
+.final-card .tgline{margin-top:var(--core-s-6)}
+
+@media (max-width:860px){
+  .hero{padding-top:var(--core-s-8)}
+  .pt-plate{padding:var(--core-s-6) var(--core-s-5)}
+  .feat-grid,.steps{grid-template-columns:1fr;margin-top:var(--core-s-6)}
+  .cmp-table{margin-top:var(--core-s-6)}
+  .cmp-table :is(th,td){padding:var(--core-s-3) var(--core-s-2)}
+  .cmp-table :is(th,td):first-child{width:44%}
+  .final-card{padding:var(--core-s-10) var(--site-pad)}
+  .final-card .btn{width:100%}
+}
