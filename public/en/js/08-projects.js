@@ -33,7 +33,7 @@ function projectModal(pid) {
     }
   };
   if (p) $('projDel').onclick = async () => {
-    if (!(await CoreUI.confirm({ text: `Delete project “${p.name}»? Chats will remain in Recent.`, ok: 'Delete project', danger: true }))) return;
+    if (!(await CoreUI.confirm({ text: `Delete project “${p.name}”? Chats will remain in Recent.`, ok: 'Delete project', danger: true }))) return;
     S.projects = S.projects.filter((x) => x.id !== p.id); S.chats.forEach((c) => { if (c.proj === p.id) c.proj = null; });
     if (S.proj === p.id) S.proj = null; save(); closePanel(); render();
   };

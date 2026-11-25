@@ -28,11 +28,11 @@ test('UI: закрепление, длинный чат, выбор старой
       : mode === 'selected' ? [{ reset: true }, { t: selectedEdit }, { diag: { artifactMode: 'edit', editCount: 1, outcome: 'complete' } }]
       : mode === 'fail' ? [{ e: 'Правки не применены; исходная версия сохранена.' }, { diag: { artifactMode: 'edit', outcome: 'edit_rejected' } }]
       : [{ t: 'Четыре.' }, { diag: { artifactMode: null, outcome: 'complete' } }];
-    await route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: events.map((e) => JSON.stringify(e)).join('\n') + '\n' });
+    await route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: events.concat([{ fin: true }]).map((e) => JSON.stringify(e)).join('\n') + '\n' });
   });
   const sendAndWait = async (text) => {
     await page.evaluate((text) => send(text), text);
-    await page.waitForFunction(() => !busy && S.chats.find((c) => c.id === S.cur)?.msgs.at(-1)?.live === false);
+    await page.waitForFunction(() => !anyBusy() && S.chats.find((c) => c.id === S.cur)?.msgs.at(-1)?.live === false);
   };
   await page.goto(s.base + '/chat'); await page.waitForFunction(() => MODELS.length > 0);
   await sendAndWait('создай 3д поле от первого лица');

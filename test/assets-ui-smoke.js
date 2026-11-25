@@ -13,7 +13,7 @@ test('Chromium: opaque preview fetches GLB, ZIP contains exact binary and creden
  const ctx=await b.newContext(),page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await ctx.addCookies([{name:'premier_session',value:'tok1',url:s.base}]);
  const source='```html\n<!doctype html><html><head><title>Test Game</title></head><body><main>Game with asset download</main><script>fetch("'+asset.ref+'").then(r=>r.arrayBuffer()).then(b=>document.querySelector("main").textContent="MODEL:"+b.byteLength).catch(e=>document.querySelector("main").textContent=e.message);</script></body></html>\n```';
  await ctx.route('**/api/chat',route=>route.fulfill({status:200,contentType:'application/x-ndjson',body:[{asset},{t:source},{diag:{artifactMode:'create',outcome:'complete'}}].map(JSON.stringify).join('\n')+'\n'}));
- await page.goto(s.base+'/chat');await page.waitForFunction(()=>MODELS.length>0);await page.evaluate(()=>send('создай 3д игру'));await page.waitForFunction(()=>!busy && !cur().msgs.at(-1).live);
+ await page.goto(s.base+'/chat');await page.waitForFunction(()=>MODELS.length>0);await page.evaluate(()=>send('создай 3д игру'));await page.waitForFunction(()=>!anyBusy() && !cur().msgs.at(-1).live);
  // Depending on normal follow-preview preference, explicitly open the completed artifact.
  await page.evaluate(()=>showArt(cur().msgs.at(-1).id,0,'preview'));const frame=page.frameLocator('#pFrame');await frame.locator('main').filter({hasText:'MODEL:'+data.length}).waitFor();
  assert.ok(await page.evaluate(()=>document.querySelector('#pFrame').getAttribute('sandbox').includes('allow-scripts')&&!document.querySelector('#pFrame').getAttribute('sandbox').includes('allow-same-origin')));

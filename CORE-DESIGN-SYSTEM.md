@@ -1,4 +1,4 @@
-# Premier · Core — design system (redesign steps 1–4 of 8)
+# Premier · Core — design system (redesign steps 1–5 of 8)
 
 This document describes the foundation that every later redesign step builds on.
 It is written for someone who has only this file and the files it names.
@@ -26,9 +26,12 @@ It is written for someone who has only this file and the files it names.
 | `tests/core-scene.test.js`, `tests/core-scene-util.js` | Automated checks of section 12. |
 | `public/core/core-chat.css` | The chat screen: layout, sidebar, top bar, messages and prose, input field, limit line, empty state, phone (section 13). |
 | `public/js/23-core-chat.js` | Chat glue: drives the Core from what happens in the chat, builds the "+" menu, watches the field width. No chat logic, no texts. |
-| `public/css/chat-legacy.css`, `scripts/build-chat-legacy.py` | Generated bridge: the old look of chat parts that are not migrated yet (step 5). Section 13.2. |
+| `public/css/chat-legacy.css`, `scripts/build-chat-legacy.py` | Generated bridge, kept until step 8. No page loads it since step 5 (`tests/core-chat.test.js` checks that). Section 13.2. |
 | `tests/core-chat.test.js` | Automated checks of section 13. |
 | `public/core/core-work.css` | What the AI makes and does: result window, work log, code blocks, result cards and media, cloud computer, folder, helper (section 14). |
+| `public/core/core-dialogs.css` | Windows, menus, tooltips, notifications, confirmation capsules and the account, billing and team contents on the chat page (section 15). |
+| `public/js/25-core-dialogs.js` | Glue: turns the shared window's `on` class into a Core window; plan cards, account sections, the model menu keys. No chat logic, no texts. |
+| `tests/core-dialogs.test.js` | Automated checks of section 15. |
 | `public/js/24-core-work.js` | Glue for section 14: divider, birth of the result window, phone switch, keyboard, terminal theme. No chat logic, no texts. |
 | `tests/core-work.test.js` | Automated checks of section 14. |
 
@@ -1099,3 +1102,34 @@ The two popovers at the input field (`#fsMenu`, `#agMenu`, class `fsmenu`) are n
 - Safari, Firefox, a real phone, a screen reader.
 - The real interactive terminal session: the test server has no cloud computer, so xterm was opened with the palette and fed sample output; the WebSocket session itself was not exercised.
 - Video recording of an animation against a real server (the bar's states were set by hand), real publishing (the request was answered by a stub), the folder mode (the test browser cannot pick a folder; the cards were rendered from sample data).
+
+## 15. Dialogs and small elements on the chat page (step 5)
+
+The chat page no longer loads `tokens.css` or `chat-legacy.css`. It loads `core/core-dialogs.css` and `js/25-core-dialogs.js` last, after the step 4 files. Covered: the shared window (account, billing and limits, plans, share, projects, team, computer access, cloud computer, Ultra credits), the model menu, the image viewer, notifications, tooltips, confirmations and the offline page (`public/offline.html`, self-contained, both themes).
+
+### 15.1 How the shared window works
+
+- Scripts still open the window the old way: they add the class `on` to `#modal`. `25-core-dialogs.js` turns that class into a Core window (`CoreUI.dialog`) and back. Keep the element ids `#modal`, `.dlg`, `#dtitle`, `#dclose` and `#dbody`: payment and limit flows read `#dtitle`, and the language switch refuses to run while a window is open.
+- The window is born from the last pointer or Enter position (remembered for 6 s, so a window that opens after a server reply still grows from the button). Switching to another face of the same plate turns it; the plate animates its height.
+- Plans: the chosen plan comes forward, and the Core behind the plans window brightens as the plan gets more expensive (`Core.lit`).
+
+### 15.2 Rules for the chat page
+
+1. Confirmations, prompts and alerts are `CoreUI.confirm`, `CoreUI.prompt` and `CoreUI.alert` (the capsule). Chat-loaded scripts must not call the browser's `confirm`, `prompt` or `alert`; `tests/core-dialogs.test.js` checks this. The one native call left is the last-resort fallback in `public/language.js`, for pages without toasts or Core (login, landing). The chat page cannot reach it.
+2. Destructive capsules use `danger: true`: the red action is not filled, and focus starts on Cancel. Enter on a capsule runs the focused button; Escape cancels and closes only the capsule.
+3. Tooltips use `data-core-tip`. Chat-loaded scripts must not write `title`. The only `title` left is the accessible name of the preview frame (`tests/core-dialogs.test.js`).
+4. One amber primary action per window. Status colours appear only for success, warning and error. Toast tones: `ok` for saves, `warn` for limits, `bad` for failures; mode switches and "2FA is off" stay neutral.
+5. Status dots and media elements have accessible names. The microphone button reports its state through `aria-pressed` and `data-core-tip`.
+
+### 15.3 Surface status
+
+- Core: account (all sections), plans, payment waiting and failure states, limits and purchases, free-limit end screen, share, project create and settings, team plan, computer access, cloud computer, Ultra credits, model menu, image viewer, notifications, tooltips, capsules, toasts, offline page.
+- Not on the chat page: a chat or project row menu, rename dialog, search dialog, notification-permission popup, offline or update banner. None of these exist in the chat today.
+- Kept on disk until step 8: `tokens.css`, the old chat stylesheets, and `chat-legacy.css` with its build script. Nothing in the chat loads them.
+
+### 15.4 Not verified in step 5
+
+- Safari and Firefox, a real phone, a screen reader, a real graphics card.
+- Real speech recognition and read-aloud, the real payment providers, real publishing and sign-in back ends.
+- Scrolling with a keyboard-focused tooltip on a page long enough to scroll (the empty chat cannot scroll).
+- Escape in the work menu when an upper Core menu or window consumed the key.
