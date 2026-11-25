@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" class="core" data-page="trial" data-core-place="center" data-core-is="rest">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -12,19 +12,21 @@
 <meta property="og:image" content="/og-protrial.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="/og-protrial.png">
-<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <link rel="alternate" hreflang="ru" href="/protrial">
 <link rel="alternate" hreflang="en" href="/en/protrial">
 <link rel="alternate" hreflang="x-default" href="/protrial">
 <script>document.documentElement.classList.add('js')</script>
 <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/unbounded-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/jetbrains-mono-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/tokens.css?v=3">
-<link rel="stylesheet" href="/protrial.css?v=1">
+<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2">
+<link rel="stylesheet" href="/core/core-site.css?v=1">
+<link rel="stylesheet" href="/core/core-trial.css?v=1">
+<script defer src="/core/core-ui.js?v=2"></script><script defer src="/core/core-scene.js?v=3"></script>
+<script defer src="/js/26-core-site.js?v=1"></script>
 </head>
 <body>
+<div class="core-scene" aria-hidden="true"></div>
 
 <!-- иконки -->
 <svg style="display:none"><defs>
@@ -42,10 +44,10 @@
 </defs></svg>
 
 <!-- навигация -->
-<header class="nav" id="nav">
+<header class="nav core-glass core-glass--far" id="nav" data-core-at="top">
   <div class="wrap">
     <a href="/" class="brand">
-      <span class="nav-mark"><img src="/icon-p-amber.svg" alt="" width="26" height="26" style="display:block"></span>
+      <span class="brand-spark" aria-hidden="true"></span>
       Premier
     </a>
     <div class="sp"></div>
@@ -62,9 +64,8 @@
 
 <main>
   <!-- ===== HERO ===== -->
-  <div class="hero">
-    <div class="glow" aria-hidden="true"></div>
-    <div class="wrap">
+  <div class="hero" data-flight="50 46 .36 0 .1" data-flight-phone="50 34 .6 0 0">
+    <div class="wrap pt-plate core-glass" data-core-at="core">
       <div class="hero-kicker rv">
         <span class="kicker-dot" aria-hidden="true"></span>
         ПОДАРОК · 24 ЧАСА
@@ -90,8 +91,8 @@
   </div>
 
   <!-- ===== КАРТОЧКИ ===== -->
-  <section id="features">
-    <div class="wrap center">
+  <section id="features" data-flight="92 34 .4 1 .2" data-flight-phone="8 30 .6 .9 0">
+    <div class="wrap center site-plate core-glass core-glass--far">
       <div class="eyebrow rv">Что входит</div>
       <h2 class="h2 rv">Все возможности Pro — на 24 часа</h2>
       <div class="feat-grid" id="featGrid">
@@ -134,43 +135,43 @@
   </section>
 
   <!-- ===== ТАБЛИЦА Free vs Pro ===== -->
-  <section id="compare" style="padding-top:0">
-    <div class="wrap">
+  <section id="compare" data-flight="7 60 .36 2 -.15" data-flight-phone="92 60 .5 1.8 0">
+    <div class="wrap site-plate core-glass core-glass--far">
       <div class="eyebrow rv center">Сравнение</div>
       <h2 class="h2 rv center">Что меняется</h2>
       <table class="cmp-table rv" aria-label="Free версус Pro">
         <thead>
           <tr>
-            <th style="width:50%">Умение</th>
-            <th style="width:25%;text-align:center">Free</th>
-            <th class="pro-col" style="width:25%;text-align:center">🌟 Pro на 24 ч</th>
+            <th>Умение</th>
+            <th>Free</th>
+            <th class="pro-col">🌟 Pro на 24 ч</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="feat-label">Сообщений в день</td>
-            <td style="text-align:center;color:var(--p-muted)" id="cmp-free-msgs">ограничено</td>
-            <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>300 в день</span></td>
+            <td id="cmp-free-msgs">ограничено</td>
+            <td class="pro-col"><span class="ck"><svg><use href="#i-check"/></svg>300 в день</span></td>
           </tr>
           <tr>
             <td class="feat-label">Запуск кода Python</td>
-            <td style="text-align:center;color:var(--p-muted)" id="cmp-free-code">ограничено</td>
-            <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>50 в день</span></td>
+            <td id="cmp-free-code">ограничено</td>
+            <td class="pro-col"><span class="ck"><svg><use href="#i-check"/></svg>50 в день</span></td>
           </tr>
           <tr>
             <td class="feat-label">Создание сайтов</td>
-            <td style="text-align:center;color:var(--p-muted)" id="cmp-free-sites">ограничено</td>
-            <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>30 в день</span></td>
+            <td id="cmp-free-sites">ограничено</td>
+            <td class="pro-col"><span class="ck"><svg><use href="#i-check"/></svg>30 в день</span></td>
           </tr>
           <tr>
             <td class="feat-label">Генерация картинок</td>
-            <td style="text-align:center"><span class="no"><svg><use href="#i-x"/></svg></span></td>
-            <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>Да</span></td>
+            <td><span class="no"><svg><use href="#i-x"/></svg></span></td>
+            <td class="pro-col"><span class="ck"><svg><use href="#i-check"/></svg>Да</span></td>
           </tr>
           <tr>
             <td class="feat-label">Облачный компьютер</td>
-            <td style="text-align:center"><span class="no"><svg><use href="#i-x"/></svg></span></td>
-            <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>Да</span></td>
+            <td><span class="no"><svg><use href="#i-x"/></svg></span></td>
+            <td class="pro-col"><span class="ck"><svg><use href="#i-check"/></svg>Да</span></td>
           </tr>
         </tbody>
       </table>
@@ -178,8 +179,8 @@
   </section>
 
   <!-- ===== КАК ЭТО РАБОТАЕТ ===== -->
-  <section id="how">
-    <div class="wrap center">
+  <section id="how" data-flight="92 62 .34 3 .2" data-flight-phone="8 40 .55 2.6 0">
+    <div class="wrap center site-plate core-glass core-glass--far">
       <div class="eyebrow rv">Три шага</div>
       <h2 class="h2 rv">Как это работает</h2>
       <div class="steps">
@@ -203,8 +204,8 @@
   </section>
 
   <!-- ===== FAQ ===== -->
-  <section id="faq" style="padding-top:0">
-    <div class="wrap">
+  <section id="faq" data-flight="8 40 .36 4 -.15" data-flight-phone="92 70 .5 3.4 0">
+    <div class="wrap site-plate core-glass core-glass--far">
       <div class="eyebrow rv center">Вопросы</div>
       <h2 class="h2 rv center">Частые вопросы</h2>
       <div class="faq rv">
@@ -233,10 +234,9 @@
   </section>
 
   <!-- ===== FINAL CTA ===== -->
-  <div class="final">
+  <div class="final" data-flight="50 52 .5 5.2 0" data-flight-phone="50 46 .78 4.2 0">
     <div class="wrap">
-      <div class="final-card rv" id="finalCard">
-        <div class="glow" aria-hidden="true"></div>
+      <div class="final-card rv site-plate core-glass" id="finalCard" data-core-at="core">
         <div class="badge-free"><i></i>Бесплатно</div>
         <h2 class="h2">Заберите Pro на сегодня</h2>
         <p class="sub">Без карты · без автопродления · один раз на аккаунт</p>
@@ -251,9 +251,9 @@
 </main>
 
 <footer>
-  <div class="wrap">
-    <a href="/" class="brand" style="font-size:15px">
-      <span class="nav-mark" style="width:22px;height:22px"><img src="/icon-p-amber.svg" alt="" width="22" height="22" style="display:block"></span>
+  <div class="wrap core-glass core-glass--far" data-core-at="bottom">
+    <a href="/" class="brand">
+      <span class="brand-spark" aria-hidden="true"></span>
       Premier
     </a>
     <span>© <span id="yr"></span></span>
@@ -320,7 +320,7 @@ function applyStatus(d) {
     ptBtn.disabled = true;
     ptBtn.innerHTML = 'Акция завершена';
     document.getElementById('finalCard').querySelector('button').disabled = true;
-    document.getElementById('finalCard').querySelector('button').innerHTML = 'Акция завершена — <a href="/chat" style="text-decoration:underline">вернуться к тарифам</a>';
+    document.getElementById('finalCard').querySelector('button').innerHTML = 'Акция завершена — <a href="/chat">вернуться к тарифам</a>';
     return;
   }
   if (s.state === 'active' && s.until) {
