@@ -1,12 +1,12 @@
-# Premier · Core — design system (redesign steps 1–4 of 8)
+# Premier · Core — design system (redesign steps 1–5 of 8)
 
 This document describes the foundation that every later redesign step builds on.
 It is written for someone who has only this file and the files it names.
 
 - Showcase (every token and component, live): `/core/showcase.html`
-- The chat screen (`public/chat.html` and its English mirror) is the first product page on the system. Every other page still has the old look and loads none of these files.
-- Step 1 built the foundation (sections 1–11). Step 2 built the Core, the 3D scene behind the interface (section 12). Step 3 moved the chat screen to the system (section 13) and added two small things to the foundation: `Core.stage()` (12.5) and `CoreUI.light.scope()` (section 5). Step 4 moved everything the AI makes and does: the result window, the work log, code blocks, result cards and media, the cloud computer, folder and helper (section 14), and added two palettes to the tokens: syntax (14.4) and terminal (14.5).
-- The guarantees below are checked by `tests/core-foundation.test.js`, `tests/core-scene.test.js`, `tests/core-chat.test.js` and `tests/core-work.test.js` (`npm test`).
+- The chat screen (`public/chat.html` and its English mirror) is the first product page on the system. Every other page still has the old look and loads none of these files. Since step 5 the offline page `public/offline.html` has the Core look too; it is self-contained and loads none of these files either (15.13).
+- Step 1 built the foundation (sections 1–11). Step 2 built the Core, the 3D scene behind the interface (section 12). Step 3 moved the chat screen to the system (section 13) and added two small things to the foundation: `Core.stage()` (12.5) and `CoreUI.light.scope()` (section 5). Step 4 moved everything the AI makes and does: the result window, the work log, code blocks, result cards and media, the cloud computer, folder and helper (section 14), and added two palettes to the tokens: syntax (14.4) and terminal (14.5). Step 5 moved every window and small element of the chat: the shared window with account settings, plans and payment, limits, team, project and sharing, the model menu, notifications, tooltips, the capsules that replace the browser's own boxes, the image viewer, the offline page (section 15), and added one command to the scene, `Core.lit()` (15.5). Since step 5 the chat page loads no old stylesheet. Step 5 was stopped early twice; its open checks are in 15.16.
+- The guarantees below are checked by `tests/core-foundation.test.js`, `tests/core-scene.test.js`, `tests/core-chat.test.js`, `tests/core-work.test.js` and `tests/core-dialogs.test.js` (`npm test`).
 
 ---
 
@@ -26,11 +26,15 @@ It is written for someone who has only this file and the files it names.
 | `tests/core-scene.test.js`, `tests/core-scene-util.js` | Automated checks of section 12. |
 | `public/core/core-chat.css` | The chat screen: layout, sidebar, top bar, messages and prose, input field, limit line, empty state, phone (section 13). |
 | `public/js/23-core-chat.js` | Chat glue: drives the Core from what happens in the chat, builds the "+" menu, watches the field width. No chat logic, no texts. |
-| `public/css/chat-legacy.css`, `scripts/build-chat-legacy.py` | Generated bridge: the old look of chat parts that are not migrated yet (step 5). Section 13.2. |
+| `public/css/chat-legacy.css`, `scripts/build-chat-legacy.py` | Generated bridge of steps 3 and 4: the old look of chat parts that were not migrated yet (13.2). Since step 5 no page loads it. Both files are still on disk and `tests/core-chat.test.js` still checks them (15.1). |
 | `tests/core-chat.test.js` | Automated checks of section 13. |
 | `public/core/core-work.css` | What the AI makes and does: result window, work log, code blocks, result cards and media, cloud computer, folder, helper (section 14). |
 | `public/js/24-core-work.js` | Glue for section 14: divider, birth of the result window, phone switch, keyboard, terminal theme. No chat logic, no texts. |
 | `tests/core-work.test.js` | Automated checks of section 14. |
+| `public/core/core-dialogs.css` | Windows and small elements of the chat: the window shell and its shared parts, account settings, plans and payment, limits, Ultra credits, team, the model menu, the install card, the announcement, the image viewer (section 15). Also holds the page base (global reset, `button`, `svg`) that used to come from the bridge (15.2). Loaded last. |
+| `public/js/25-core-dialogs.js` | Glue for section 15: turns the class `on` of `#modal` into a Core dialog, turns between sections, picks the plan plate and calls `Core.lit`, keyboard of the model menu, the image viewer, the keyboard inset on a phone. No chat logic, no texts. |
+| `public/offline.html` | The offline page shown by the service worker. Core look, self-contained: token values are written in the file (15.13). |
+| `tests/core-dialogs.test.js` | Automated checks of section 15. |
 
 Load order on a page that uses the system (after any old stylesheets that are still needed):
 
@@ -371,7 +375,7 @@ A chip is clickable and selectable. A tag only informs, in the machine voice; to
 - The menu element can sit anywhere; on first open it is moved into a top layer so nothing clips it. Listen on the menu: `menu.addEventListener('core:select', e => e.detail.item / e.detail.value)`, or put ordinary `click` handlers on items.
 - `menuitemradio` items inside `role="group"` behave as one choice; `menuitemcheckbox` toggles. `data-core-keep` keeps the menu open after a choice. `data-core-align="end"` and `data-core-side="top"` on the trigger change placement. A long menu wraps its items in `core-menu__scroll`.
 - Keyboard: arrows, Home, End, first letter, Enter or Space, Esc (returns focus to the trigger), Tab closes.
-- Tooltips appear on hover after 400 ms and at once on keyboard focus, never on touch. Inside `.core`, an ordinary `title` attribute is converted to a Core tooltip the first time the pointer reaches it (the text is kept as `aria-label` when the element has no text). `data-core-native` on the element or an ancestor turns that off.
+- Tooltips appear on hover after 400 ms and at once on keyboard focus, never on touch. Inside `.core`, an ordinary `title` attribute is converted to a Core tooltip the first time the pointer reaches it (the text is kept as `aria-label` when the element has no text). `data-core-native` on the element or an ancestor turns that off. Since step 5 the chat page and its scripts write `data-core-tip` themselves, and a test forbids `title` there (15.10); the conversion remains for other pages.
 
 ### Notification toast
 
@@ -382,7 +386,7 @@ const t = CoreUI.toast({ text: 'Chat deleted', action: { label: 'Undo', onClick(
 t.dismiss();
 ```
 
-The capsule flies out of the Core's position (`--core-x/y`), rests at the top centre, and flies back. Hover or focus pauses the timer; a click dismisses. `duration: 0` keeps it until dismissed. At most three are visible. Errors are announced as alerts to screen readers.
+The capsule flies out of the Core's position (`--core-x/y`), rests at the top centre, and flies back. Hover or focus pauses the timer; a click dismisses. `duration: 0` keeps it until dismissed. At most three are visible. Errors are announced as alerts to screen readers. Since step 5: a message that is already visible (same tone, text and action label) is not shown a second time, its timer restarts; the chat's own `toast(text, tone)` calls this function (15.9).
 
 ### Dialog
 
@@ -427,7 +431,7 @@ await CoreUI.alert('The file is too large.');
 
 A small near-glass capsule appears next to the pointer (or the focused control), modal, without dimming the page. Enter confirms, Esc and a click elsewhere cancel. With `danger: true` the confirm button is destructive and Cancel has focus. Options: `text`, `ok`, `cancel`, `danger`, `main`, `value`, `placeholder`, `type`, `at`.
 
-Two things to know when replacing the ~35 native calls:
+Two things to know when replacing native calls (step 5 replaced all of them in the scripts the chat page loads, 15.11; other pages still have theirs):
 
 - The native functions block; these return promises. The calling function becomes `async` and the call gets `await`. Check each call site for code that relied on blocking.
 - Default button labels are «ОК» / «Отмена» when `<html lang>` starts with `ru`, otherwise "OK" / "Cancel": the labels the browser shows in its own boxes today. Pass `ok` / `cancel` to use product wording.
@@ -624,6 +628,7 @@ One global object, `Core`. Every command returns `Core`, so calls can be chained
 | --- | --- |
 | `Core.state(name, { target, ax, ay, hold })` | Sets the state (12.3). `hold` (ms): return to the previous state after that time. Without arguments: returns the current state. |
 | `Core.pulse(kind)` | One-shot event: `'flash'`, `'error'`, `'key'` (12.3). |
+| `Core.lit(k)` | Step 5. How bright the Core stays under an open dialog, from 0 (as usual) to 1 (15.5). Without arguments: returns the current value. |
 | `Core.model(name)` | Takes the form of that AI model (12.4). Call it when the user picks a model. |
 | `Core.form(id)` | Takes a form by its id, for screens without a model. |
 | `Core.place(name)` or `Core.place({ x, y, size })` | Moves the Core (12.5). |
@@ -639,7 +644,7 @@ One global object, `Core`. Every command returns `Core`, so calls can be chained
 
 Event: `core:scene` on `<html>`, `detail.type` is `ready`, `mode`, `state` or `quality`; the rest of `detail` is `Core.info()`.
 
-The scene keeps three attributes on `<html>` up to date, for CSS: `data-core-scene` = `boot` (not started), `live` (3D) or `glow` (fallback); `data-core-is` = the state shown now; `data-core-place` = the place shown now (`custom` for a point).
+The scene keeps three attributes on `<html>` up to date, for CSS: `data-core-scene` = `boot` (not started), `live` (3D) or `glow` (fallback); `data-core-is` = the state shown now; `data-core-place` = the place shown now (`custom` for a point). Since step 5 there is a fourth, `data-core-lit` = `1`, `2` or `3`, present only while `Core.lit()` is above zero (15.5).
 
 ### 12.3 States
 
@@ -749,7 +754,7 @@ How it holds for any form, model, place, screen size and quality level: before a
 
 The strictest case is `text-3` on near glass (menus, tooltips) in the dark theme: it has 4.95:1 with nothing behind it, so the blurred Core behind a menu may add only a little light. This is why the Core is fine luminous dust and not a bright blob, and why white-hot is a colour here, not a floodlight. Consequences to know:
 
-- If you raise `A_DARK`, `A_PAPER`, `FLASH`, a state's `bright`, or the aura constants, run the measuring test (below). Do not judge by eye.
+- If you raise `A_DARK`, `A_PAPER`, `FLASH`, a state's `bright`, or the aura constants, run the measuring test (below). Do not judge by eye. Since step 5 `Core.lit()` raises the brightness of the receded state towards the constant `LIT` (0.9 of rest); this was not measured (15.16), so run the test before relying on it and before raising `LIT`.
 - If the glass tokens change (fill, blur, `--core-bright-*`), run it too: the limit is computed against them.
 - Measured lowest contrast over all forms, states and places: 4.56:1 in the dark theme, 4.95:1 in the light theme (details in the step 2 change note).
 
@@ -792,6 +797,8 @@ Showcase address parameters, for checks: `theme=dark|light`, `motion=reduce`, `t
 
 ### 13.1 What the page loads
 
+> Since step 5 the list below is history: the two old stylesheets at its top are gone from the page, `core-dialogs.css` and `25-core-dialogs.js` were added at the end, and several `?v=` numbers were raised. The current tags are in 15.1.
+
 ```html
 <html lang="ru" class="core" data-core-place="center" data-core-is="rest">
 <link rel="stylesheet" href="/tokens.css?v=3">                 <!-- old tokens: the bridge below still uses --p-* -->
@@ -807,11 +814,13 @@ Showcase address parameters, for checks: `theme=dark|light`, `motion=reduce`, `t
 <script defer src="/js/24-core-work.js?v=1"></script>          <!-- step 4 glue, last -->
 ```
 
-- The chat page no longer loads `css/chat-main.css`, `language.css`, `theme/*.css`, `growth.css`, `limits.css`, `chat-ui.css`, `ultra.css`, `anim.css`, `chat-visual.css` or an inline `<style>`. The files stay on disk until step 8; other pages still use some of them.
-- The Core files have `?v=` on this page (the showcase loads them without a version). Raise the number in `chat.html` **and** `en/chat.html` whenever one of them changes. Step 4 raised `core-tokens.css`, `core-components.css` and `chat-legacy.css` to 2.
+- The chat page no longer loads `css/chat-main.css`, `language.css`, `theme/*.css`, `growth.css`, `limits.css`, `chat-ui.css`, `ultra.css`, `anim.css`, `chat-visual.css` or an inline `<style>`. The files stay on disk until step 8; other pages still use some of them. Since step 5 the page also loads neither `tokens.css` nor `css/chat-legacy.css` (15.1).
+- The Core files have `?v=` on this page (the showcase loads them without a version). Raise the number in `chat.html` **and** `en/chat.html` whenever one of them changes. Step 4 raised `core-tokens.css`, `core-components.css` and `chat-legacy.css` to 2. After step 5 the page has `core-scene.css`, `core-chat.css`, `core-ui.js`, `core-scene.js` and `24-core-work.js` at 2 and the new `core-dialogs.css` and `25-core-dialogs.js` at 1 (15.1).
 - **English mirror.** The brief for the redesign says `public/en` is generated by `scripts/build-i18n.py`. In the archive this is not true any more: running the generator rewrites 19 English files and replaces finished translations with half-translated text, because `locales/en.json` is far behind the hand-finished English files (and `en/chat.html` used an older stylesheet, `css/chat-main-en.css`). Step 3 therefore did **not** run the generator. `en/chat.html` received exactly the same structural edits as `chat.html`, applied by one script to both files. The new script `23-core-chat.js` and the two changed scripts (`15-growth.js`, `19-limits.js`) have no English copies: the English page loads them from `/js/`, like `15`…`22` before. Until the catalogue is repaired, mirror every edit of a Russian page or of `js/00…14` in `public/en` by hand, and do not run the generator. One line of the generator was fixed in step 3 so that it is safe to run once repaired: it switched the page language by replacing the exact string `<html lang="ru">`, which a Core page no longer has (its `<html>` carries `class="core"` and `data-core-*`); it now replaces the start of the tag, as `server.js` does. Tests that look for the tag must allow attributes too (`/<html lang="en"[ >]/`).
 
 ### 13.2 The bridge: `chat-legacy.css`
+
+> Since step 5 the chat page does not load the bridge: every part it styled is in `core-dialogs.css` (section 15), and its global rules moved to the top of that file (15.2). The text below describes steps 3 and 4. The file and its script are still on disk, and `tests/core-chat.test.js` still checks the file against its sources (15.1): delete them only together with that check.
 
 Old rules for migrated and not-yet-migrated parts were mixed in nine files. `scripts/build-chat-legacy.py` reads those files in their old order and keeps only the rules of parts that still have the old look: dialogs, the model menu, tooltips, toasts (step 5). The parts of step 4 left the bridge (14.7).
 
@@ -822,7 +831,7 @@ Old rules for migrated and not-yet-migrated parts were mixed in nine files. `scr
 - `python3 scripts/build-chat-legacy.py --check` fails when the file is out of date; `npm test` runs it.
 - Verified by comparing computed styles of every element of the old parts between the step 2 build and this build (code block, thinking row, work log, result card and window, model menu, account, plans, project and limits dialogs, toast, computer popover; both themes; 1440 and 390): no differences except the shared icon button `.ib`, which is new everywhere, and the focus ring.
 
-Old parts (since step 4: only dialogs, the model menu and the toast) sit on the new scene and stay readable because they bring their own opaque backgrounds. Three seams are handled in `core-chat.css`: the model menu opens from the right edge of its button; a closed model menu is `visibility:hidden` (its items used to stay in the Tab order); `[hidden]` is enforced for the page.
+Old parts (since step 4: only dialogs, the model menu and the toast; since step 5: none on the chat page) sit on the new scene and stay readable because they bring their own opaque backgrounds. Since step 5 the model menu is styled in `core-dialogs.css` (15.6), so of the three seams below only `[hidden]` is still in `core-chat.css`. Three seams are handled in `core-chat.css`: the model menu opens from the right edge of its button; a closed model menu is `visibility:hidden` (its items used to stay in the Tab order); `[hidden]` is enforced for the page.
 
 ### 13.3 Surfaces of the screen
 
@@ -868,7 +877,7 @@ All of it is in `public/js/23-core-chat.js`. The script changes no chat logic: i
 - **Centre place.** The named `center` has a radius of 30 % of the smaller side, which is narrower than the 736 px column of greeting, field and suggestions: the Core would hide behind them. In an empty chat the script therefore asks for `Core.place({ x, y: 46, size })` with a radius of half the field width plus 120 px (limited by the stage width and by 56 % of the height), centred on the stage; where that is not at least 15 % larger than the named place it uses `Core.place('center')`. It is recomputed with the stage.
 - The last model name is kept in `localStorage['premier:core-model']`, so the Core appears in that model's form at once instead of flowing from the sphere after the model list loads.
 - **Stage.** `Core.stage({ left, right })` from the bounding box of `.main`, on every size change of `.main` (debounced 90 ms). A later step that opens a panel beside the chat needs no extra call.
-- **Light scope.** `CoreUI.light.scope('.side, .box-glass, #sugg, .pane-in')` (step 4 added the result window). Step 5: when a dialog becomes Core glass, add its selector here.
+- **Light scope.** `CoreUI.light.scope('.side, .box-glass, #sugg, .pane-in')` (step 4 added the result window). Since step 5 `25-core-dialogs.js` appends `#menu, .pwa-card, .ann` to this list. The windows themselves (`#modal`, `#ulWin`, `#zoomWin`) were not added (15.3, 15.16).
 - **No graphics card.** When the scene reports `glow` with reason `no-webgl` or `shader`, the script sets `data-core-transparency="reduce"` on `<html>` (and removes it if the scene goes live). Without a GPU the browser blurs on the CPU on every change under the glass; the page then uses the system's opaque glass, and `core-chat.css` stops the two ambient animations of the fallback glow. Typing and streaming then cost the same as on the old page (13.8). The mark `data-chat-soft` tells that the script, not the user, set the attribute.
 - **Edge of the field.** `html[data-core-is]` drives it in CSS: `listening` warms the edge of `.box-glass` from below (`::before`, heat gradient), `thinking` and `answering` warm it fully. No script.
 - **The field glides.** When the chat stops being empty the field would jump from the middle to the bottom; the script animates the difference over `--core-dur-4` (skipped under reduced motion).
@@ -1060,7 +1069,7 @@ The terminal is the purest machine voice: JetBrains Mono 13 px, dense glass, lig
 
 The three cool tones exist only for program output (`ls`, `git`, test runners) and are used nowhere else. Values are plain hex because xterm parses them itself: `clTheme()` in `cloud.js` reads the tokens with `getComputedStyle`, `clFont()` reads `--core-font-machine`, the font is loaded before xterm measures a cell, and `24-core-work.js` reapplies the theme when the page theme changes. The line-by-line fallback terminal (`.clout`, `.clin`) uses the same tokens.
 
-The window "Облачный компьютер" (`.clw`, inside the old dialog shell, which is step 5):
+The window "Облачный компьютер" (`.clw`, inside the shared window `#modal`; since step 5 that shell is a Core dialog, 15.3):
 
 | Machine state | Hook | Look |
 | --- | --- | --- |
@@ -1078,13 +1087,15 @@ The two popovers at the input field (`#fsMenu`, `#agMenu`, class `fsmenu`) are n
 
 - **Plate.** Things the machine hands over lie on the veil as plates: `--work-plate` (= `--chat-plate`), a hairline, and for the cards a lit-from-below edge (the masked-gradient `::after` of 13.3). No blur. Code and program output are wells (`--work-well` = dense glass), darker than plates.
 - **Result card** `.art`: icon tile, title (human), type line in the machine voice («Сайт · HTML»), state pill `.art-go`. `.art.cur` (shown in the window) is lit and its pill has an `--core-on` dot. `.building` puts a breathing particle on the tile. `.pack` is the same plate with a button row; `.ofile` is the compact file card; `.imgw` an image with a machine-voice caption.
-- **Buttons inside these parts** (`.btn`, `.btn.pri`): the class is shared with step 5 dialogs and its old rule stays in the bridge, so `core-work.css` sets it completely inside `.msg`, `.pane`, `.clw`, `.agset`. `.btn.pri` is filled with `--core-on`, not amber.
+- **Buttons inside these parts** (`.btn`, `.btn.pri`): the class is shared with step 5 dialogs and its old rule stayed in the bridge (since step 5 the shared rule is in `core-dialogs.css`, written with `:where()` so that it never out-ranks these parts, 15.4), so `core-work.css` sets it completely inside `.msg`, `.pane`, `.clw`, `.agset`. `.btn.pri` is filled with `--core-on`, not amber.
 - **Changes in the folder and on the computer** `details.fsop` / `.agop`: summary with the action (human), the path or command (machine), `+N −N`, and the state on the right (`.fss`). `.ask` is a permission prompt: `--core-warn-soft` plate, open, buttons right-aligned, "allow" bright; a deletion (`.agdanger`) asks in `--core-bad-soft`. `.run` shows a breathing particle, `.ok` / `.err` status colours, `.no` / `.undone` strike the path through. Diffs (`.fsdiff .dl.add/.del`) use status colours.
 - **Generated media** `.gens` › `.gen`: image or video on a dense tile, the download button appears on hover or focus (always on touch). Being made (`.gen.draw`): `core-gather` in the shape of the picture, a caption with a breathing particle, the time in the machine voice, and for video a 2 px progress line.
 - **Sources and tables** were done in step 3 (`.srcs`, `.tbl`) and are unchanged.
 - **Disclosure rows.** Every `details` of this step (`.wl`, `.think`, `.run`, `.fsop`, `.fileb`, `.validation-box`, version diffs) has the same chevron from `--core-glyph-chevron`, turning on open.
 
 ### 14.7 For step 5
+
+> Since step 5 every point below is closed in the code: the chat page no longer loads the bridge (15.1); the shell of the two windows is a Core dialog (15.3); the shared rules stand at the top of `core-dialogs.css` (15.2); the closed window is `hidden`, so `#dclose` is out of the Tab order; `confirm()` is the capsule (15.11); the toast is the Core capsule (15.9). The list is kept as the record of what step 4 handed over. What was not verified is in 15.16.
 
 - The bridge `chat-legacy.css` now holds only step 5 parts: 58 KB instead of 89. `scripts/build-chat-legacy.py` got a second list, `CLAIM`: a selector is dropped when it mentions a step 4 class **anywhere**, because those rules started with anything (`.msg .pre`, `.dlg .clw`). `KEEP` shrank to `menu|opt|modal|dlg|toast`. Add your classes to `DROP` or `CLAIM`, run the script, raise `?v=`.
 - The cloud computer window and the "access to computer" window are content inside the old dialog shell (`#modal .dlg`, `#dtitle`, `#dclose`). Their content is done; the shell is yours.
@@ -1099,3 +1110,319 @@ The two popovers at the input field (`#fsMenu`, `#agMenu`, class `fsmenu`) are n
 - Safari, Firefox, a real phone, a screen reader.
 - The real interactive terminal session: the test server has no cloud computer, so xterm was opened with the palette and fed sample output; the WebSocket session itself was not exercised.
 - Video recording of an animation against a real server (the bar's states were set by hand), real publishing (the request was answered by a stub), the folder mode (the test browser cannot pick a folder; the cards were rendered from sample data).
+
+---
+
+## 15. Windows and small elements of the chat (step 5)
+
+Step 5 moved everything that opens over the chat or sits in its corners: the shared window with all its contents (account settings, plans and payment, limits, team, project, sharing), the Ultra credits window, the model menu, notifications, tooltips, the browser's own `confirm` / `alert` / `prompt`, the image viewer, the install card, the announcement, and the offline page. Since this step the chat page loads no old stylesheet. Checked by `tests/core-dialogs.test.js`.
+
+The step was stopped early twice at the owner's request. The handover note says the archive runs and the chat page works; this section was written afterwards, during step 6, from the code and the handover notes. What nobody looked at is listed in 15.16 and is long: read it before relying on a surface.
+
+### 15.1 Files and loading
+
+| File | What it holds |
+| --- | --- |
+| `public/core/core-dialogs.css` | All windows and small elements of the chat, and the page base that used to come from the bridge (15.2). Loaded last, after `core-work.css`. Tokens only, no own blur, hooks untouched. Private values are `--dlg-*`. |
+| `public/js/25-core-dialogs.js` | Glue without chat logic and without texts, one file for RU and EN: the bridge "class `on` ⇄ Core dialog", the turn between sections, the choice of a plan plate and `Core.lit`, the keyboard of the model menu, the image viewer, the light scope, the keyboard inset for phone sheets. Deferred, loaded last. Does nothing when `window.CoreUI` is absent. |
+| `public/core/core-scene.js`, `core-scene.css` | New command `Core.lit(k)` and its fallback rules (15.5). |
+| `public/core/core-ui.js` | Three fixes: a closed capsule no longer swallows the next click (its layer gets `pointer-events:none` at once); Enter works after a click on the capsule's text; a tooltip shown on keyboard focus is re-placed, not hidden, by the scroll that the focus caused. The toast no longer stacks a message that is already visible (15.9). |
+| `public/offline.html` | The offline page in the Core look, self-contained (15.13). |
+| `tests/core-dialogs.test.js` | 11 checks of this section (15.15). |
+
+What `public/chat.html` loads now (the English page is the same with `/en/` script copies):
+
+```html
+<html lang="ru" class="core" data-core-place="center" data-core-is="rest">
+<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2">
+<link rel="stylesheet" href="/core/core-chat.css?v=2">
+<link rel="stylesheet" href="/core/core-work.css?v=1">
+<link rel="stylesheet" href="/core/core-dialogs.css?v=1">        <!-- step 5: the last stylesheet -->
+<script defer src="/core/core-ui.js?v=2"></script><script defer src="/core/core-scene.js?v=2"></script>
+<script src="/language.js?v=2"></script>
+<script src="/announce.js?v=2" defer></script>
+…
+<body><div class="core-scene" aria-hidden="true"></div>
+…folder.js?v=5, agent.js?v=12, cloud.js?v=7, then chat scripts js/00…22 as before (not deferred)…
+<script defer src="/js/23-core-chat.js?v=2"></script>
+<script defer src="/js/24-core-work.js?v=2"></script>
+<script defer src="/js/25-core-dialogs.js?v=1"></script>         <!-- step 5 glue: the last script -->
+```
+
+- **Gone from the page:** `/tokens.css` (the old `--p-*` tokens) and the bridge `/css/chat-legacy.css` (13.2). The page has no inline `<style>` and no `var(--p-…)` in its markup. A test allows only `/core/core-*.css?v=N` stylesheets on the two chat pages, with `core-dialogs.css` last.
+- **Still on disk:** `public/tokens.css` and the old source stylesheets (`growth.css`, `limits.css`, `ultra.css`, `chat-ui.css` and the rest of 13.1): other pages use them, they go in step 8, and a test requires them to exist. `public/css/chat-legacy.css` and `scripts/build-chat-legacy.py` are also still there although no page loads the bridge any more. Whether to delete them now or in step 8 was left open. They cannot simply be deleted: `tests/core-chat.test.js` still reads the bridge, expects the step 5 selectors in it (`.modal{`, `.dlg{`, `.menu{`, `.toast{`, …) and runs `build-chat-legacy.py --check`, and `tests/chat-ui.test.js` expects `'chat-ui.css'` among the script's sources. Deleting the bridge means rewriting those two checks in the same change.
+- **Versions.** `?v=` was raised for every static file the step changed, in every page that loads it (the handover note counts 45 files). When you change one of the Core files, raise it in `chat.html` **and** `en/chat.html`; tests compare the two pages.
+- **English mirror.** As in steps 3 and 4, `scripts/build-i18n.py` was not run (13.1): every edit was made by hand in the Russian file and in its English copy. `core-dialogs.css` and `25-core-dialogs.js` have no English copies.
+- **Service worker.** `public/sw.js` names no stylesheet, only folders (`core` is among them), so nothing in it refers to the removed files.
+
+### 15.2 The page base moved out of the bridge
+
+The bridge used to supply a few global rules that steps 3 and 4 relied on (14.7). They now stand at the top of `core-dialogs.css`, **not** scoped by `.core`:
+
+```css
+*{box-sizing:border-box;margin:0;padding:0}
+button,input,textarea,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:var(--core-cursor-action)}
+svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:860px){textarea,input,select{font-size:16px}}   /* below 16 px iOS zooms the page on focus */
+```
+
+- Any page that loads `core-dialogs.css` gets this reset and the rule that every `svg` is an 18 px stroke icon. A filled drawing must undo it (the QR code does: `.tfa-qr svg{stroke:none}`).
+- A page that does **not** load `core-dialogs.css` gets none of it. The parts of steps 3 and 4 rely on these rules (14.7), so `core-chat.css` and `core-work.css` should not be loaded without it.
+- Two leftovers of the same kind live next to them: `.core #ptag` (padding of the project tag in the input row) and `.core .p-sr` (visually hidden text).
+
+### 15.3 The window shell
+
+The chat has one shared window, `#modal`, filled by many scripts, and one window of its own, `#ulWin` (Ultra credits). Both are Core dialogs now (section 6): born from the click point, the Core recedes, focus goes inside and stays there, Esc and a click outside close, focus returns to the opener, the page behind does not scroll, a sheet from the bottom up to 600 px.
+
+```html
+<div class="core-dialog modal" id="modal" hidden>                       <!-- direct child of <body>; a test checks it -->
+  <div class="core-dialog__pane dlg" role="dialog" aria-modal="true" aria-labelledby="dtitle">
+    <div class="core-dialog__head dhead"><h2 class="core-dialog__title" id="dtitle"></h2>
+      <button type="button" class="core-btn core-btn--icon core-btn--quiet" id="dclose" aria-label="Закрыть" data-core-tip="Закрыть" data-core-tip-key="Esc">…</button></div>
+    <div class="core-dialog__body dbody" id="dbody"></div>
+  </div>
+</div>
+```
+
+**The contract with chat scripts did not change.** A script opens the window exactly as before, and closes it with `closePanel()`:
+
+```js
+dlgW(true);                                   // true = wide (880 px), false = 520 px; js/06-pane.js. Account adds .accdlg (760 × 640)
+$('dtitle').textContent = 'Тарифы Premier';
+$('dbody').innerHTML = …;
+$('modal').classList.add('on');               // 25-core-dialogs.js turns this into CoreUI.dialog.open(modal, { origin })
+```
+
+How the bridge in `25-core-dialogs.js` works:
+
+- A `MutationObserver` on the class of `#modal`: `on` added → `CoreUI.dialog.open`; `on` removed → `CoreUI.dialog.close`. The class `on` stays the single source of truth: scripts test `$('modal').classList.contains('on')`, and `language.js` refuses to switch language while `#modal.on` exists.
+- Esc, a click outside and `closePanel()` all end in `core:beforeclose`, where the bridge removes `on`. If a script adds `on` again while the window is still collapsing, the window reopens when the collapse ends.
+- **Birth point.** The bridge remembers the last `pointerdown` (or the focused control on Enter / Space) for 6 seconds and passes it as `origin`, because many windows open only after a request to the server, later than `core-ui.js` itself remembers a click.
+- **Titles are load-bearing.** Scripts recognise the open window by the text of `#dtitle` (`13-billing.js` closes the plans window after a payment by its title; `19-limits.js` re-renders itself by its title). Do not change a title without those comparisons.
+- **Turn between sections.** When `#dbody` or `#dtitle` changes while the window is open (plans → reset payment, limit → plans), `.dlg` gets `data-face="next"`: the body turns in (`@keyframes dlg-face`, `--core-dur-3`) and the pane glides from the old height to the new one. In account settings a click in `.acc-nav` sets `data-face="next"` or `"prev"` on `#accBody` by direction; the account pane has a fixed size, so it does not jump. Both are skipped under reduced motion.
+- **Phone keyboard.** `--dlg-kb` is the height of the on-screen keyboard where the browser does not shrink the page itself (iOS). The script measures it from `visualViewport` (more than 80 px counts) and writes it on every `.core-dialog`. Up to 600 px `core-dialogs.css` lifts the sheet by it, for `.modal` and `.ulw` only. A new window with a field must add its class to those two rules.
+- **Ultra credits** (`js/21-ultra.js`): `#ulWin.core-dialog.ulw` › `.core-dialog__pane.ulw-dlg` › `.core-dialog__head.ulw-head`, `.core-dialog__body.ulw-body#ulwBody`, `.core-dialog__foot.ulw-foot#ulwFoot`. It calls `CoreUI.dialog.open(root)` / `.close(root)` itself and has no bridge.
+- **Light.** The script appends `#menu, .pwa-card, .ann` to the light scope of 13.4. The windows themselves are not in the scope list: they take the Core's position from the place styles.
+
+To add a window: fill the shared window as above (preferred, nothing else to do), or build a `core-dialog` as in section 6 and open it with `CoreUI.dialog.open`; in the second case `#modal.on` does not know about it.
+
+### 15.4 Shared parts of windows
+
+They are written with `:where()`, so their specificity is that of `.core` alone: the family rules below them and the parts of step 4 (`.msg`, `.pane`, `.clw`, `.agset` set their own `.btn`, 14.6) win without `!important`.
+
+| Private value | Is |
+| --- | --- |
+| `--dlg-gap` | `--core-s-4`, the step between blocks of a window. |
+| `--dlg-plate` | `--core-fill-1`, the fill of a plate inside a window (card, row, summary). No blur. |
+| `--dlg-edge` | `inset 0 0 0 1px var(--core-line)`, the edge of a plate. |
+| `--dlg-edge-2` | `inset 0 0 0 1px var(--core-line-2)`, the edge of a plate that can be pressed or is selected. |
+| `--dlg-kb` | Keyboard height, written by the script (15.3). |
+
+| Part | Hooks | Look |
+| --- | --- | --- |
+| Button | `.btn`, `.tm-btn`; small `.sm`, `.mini` | Same as `core-btn`: glass fill, hairline. |
+| Main action | `.btn.pri` | Inside `.modal` / `.ulw`: amber, one per window (15.14). Outside windows: filled with `--core-on`, as in step 4. |
+| Destructive | `.btn.danger`, `.dangerb`, `.bad`; `.dangerb.solid` | Error colour on text and edge over `--core-bad-soft`, never a solid red fill. |
+| Quiet text button | `.gw-tr`, `.tm-link`, `.tm-rm`, `.api-ccopy`, `.ulw-back`, `.kn-del` | Secondary actions inside plates. |
+| Field | `.field` › `span` (label), `small` (hint), `input` / `textarea` / `select`; also `.promo input`, `.gw-sh input`, `.tm-inp`, `.tfa-form input` | Well, hairline, focus = `--core-focus` border and a soft ring. |
+| Switch | `label.check`, `.lm-sw` with a native checkbox | The handle is the spark glyph; "on" is light (`--core-on`), not colour. |
+| Choice of one | `.seg`, `.pm-per`, `.vrate`, `.ulw-seg`, `.tm-seg` › `button` | Segmented control in a well; selected = `[aria-checked=true]` or `.on`; `small` inside is the machine voice (discount). |
+| Tag | `.pc-badge`, `.lockt`, `.cu-tag`, `.ul-tag`, `.tm-st`, `.lm-st`, `.plan .tag`, `.gw-trial .tag`, `.ulw-pack .tag` | Machine voice, 20 px. Status: `.lm-st.ok` / `.tm-st.on`, `.lm-st.wait`, `.lm-st.bad`. |
+| Text lines | `.dsec` (caption of a group), `.msgline` (+ `.err`, `.ok`; hidden when empty), `.pnote` and its kin (notes), `.hr` | Human voice, three text levels. |
+| Reason, warning | `.reason`, `.ulw-alert` (+ `.err`) | Status plate (`--core-warn-soft` / `--core-bad-soft`), text in the main colour. |
+| Plate | `.acc-hero`, `.acc-plan`, `.lm-sec`, `.tm-box`, `.tfa-box`, `.refcard`, `.gw-trial`, … | `--dlg-plate` + `--dlg-edge`, radius `md`. |
+| Row | `.acc-row` | Name and note on the left, action on the right. |
+| Loading | `.p-skel` › three `i` | Rows of points gather (`core-gather`) and breathe, instead of grey bars. |
+
+**Order of buttons** in `.btns` (right-aligned): destructive first, on the left, split off by `<div class="sp">`; then Cancel; the main action last. Up to 600 px the buttons share the row width.
+
+Families restyled on these parts, all in `core-dialogs.css` under numbered comments: account settings (`.acc*`; profile, plan with the referral card `.refcard`, memory, voice, watermark, API, model status `.mst*`, security with two-factor protection `.tfa*`, account deletion), project and sharing (`#projF`, `.kn*`, `.gw-sh`), plans (15.5), limits (15.7), Ultra credits (`.ulw*`), team (`.tm*`), the model menu (15.6), cards over the page (15.12). The QR code `.tfa-qr` is black on white in both themes on purpose: the file's only literal colour.
+
+### 15.5 Plans and payment, `Core.lit`
+
+The plans window is built by `openPlans()` in `js/13-billing.js`. Step 6 builds the landing prices to match these plates.
+
+```html
+<div class="pm-per" role="radiogroup">                              <!-- period switch, centred -->
+  <button type="button" role="radio" aria-checked="true" class="on" data-per="3">…<small>−10%</small></button>…
+</div>
+<div class="gw-trial"><span class="tag">…</span><div><b>…</b><small>…</small></div><button class="btn pri" data-buy="trial">…</button></div>
+<div class="plans">                                                  <!-- .plans.n4 with four or more plans: two columns -->
+  <div class="plan hot cur">                                         <!-- .hot recommended, .cur the user's plan; .fwd is set by the script -->
+    <span class="tag">Популярный</span>
+    <div><h3>Pro <span class="pc-badge">сейчас</span></h3><p>…</p></div>
+    <div class="price"><s>990</s>790 ₽ <small>/ 30 дн.</small></div>
+    <div class="pm-month">≈ … в месяц · −10%</div>                   <!-- only for a longer period -->
+    <div class="gw-first">…</div>                                    <!-- first-purchase offer, when it wins -->
+    <ul><li><svg>…</svg><span>…</span></li>…</ul>
+    <button class="btn pri" data-buy="pro">Оплатить 790 ₽</button>
+    <button type="button" class="gw-tr" data-buy="trial:pro" data-core-tip="…">…</button>   <!-- trial link, when offered -->
+  </div>…
+</div>
+```
+
+- **Depth.** `.plans` is a grid of three columns (`gap: --core-s-3`). Every `.plan` rests at `scale(.97)` on `--core-fill-1`; the edge gets lighter by order: first `--dlg-edge`, second `--dlg-edge-2`, third 70 % `--core-text-3`. The plate in front (`.plan.fwd`) is `transform:none`, `--core-fill-2`, a 1 px `--core-text-2` edge and `--core-shadow-near`; the move takes `--core-dur-3`.
+- **Which plate is in front.** `plans()` in `25-core-dialogs.js`: the plate under the pointer (not touch), with focus inside, or clicked; before any of that the `.hot` plate, else `.cur`, else the first. It sets `.fwd` on one plate and `data-sel="<index>"` on `.plans`. Until the script has run, CSS puts `.plans:not([data-sel]) .plan.hot` in front. The choice survives a re-render of the window (changing the period or the payment method rebuilds `#dbody`).
+- **One amber button.** `.plan .btn.pri` is glass. Amber is only `.plan.fwd .btn[data-buy]:not(:disabled)` (and the `.hot` fallback above). A disabled button (free plan, "payment soon") is never amber, so with the free plate in front the window has no amber at all. The trial card's button `.gw-trial .btn.pri` is glass too.
+- **One dominant price.** `.plan .price` is `--core-machine-5`, weight `--core-w-2`, tabular figures, `--core-text`. The old price `s` is a separate small line **above** it (`flex:0 0 100%`, `--core-human-2`, `--core-text-3`, 1 px strike), in the human voice because the dotted zero of JetBrains Mono reads as an eight under a strike. A plate without an old price gets an empty line of the same height (`.price:not(:has(s))::before`), so prices of all plates stand on one line. The period `small` is `--core-machine-1`, `--core-text-3`. `.pm-month` and `.gw-first` are `--core-machine-1`, `--core-text-2`.
+- **The rest of a plate.** Name `h3` in `--core-machine-3`; `.tag` at the top right; features `ul` in `--core-human-1` under a hairline, 14 px check marks in `--core-text-3`; the button is full width, `--core-h-lg`. The trial link `.gw-tr` is a centred underlined quiet button under it; plates without the link get a spacer (`.plans:has(.gw-tr) .plan:not(:has(.gw-tr))::after`), so buttons align.
+- **Period switch** `.pm-per`: the shared segmented control, `width:max-content`, centred; buttons are `role="radio"` with `aria-checked` and `.on`, the discount in `small`. **Payment method** `.paym` › `.seg` with `aria-checked`.
+- **Up to 760 px:** one column, no scale, no spacers, `.pm-per` full width, the trial card stacks.
+- **Payment states.** The product has no separate waiting, success or failure windows. Waiting is the button's text plus `#payMsg` (a plate when not empty; `.err` is a `--core-bad-soft` plate with a cross, `.ok` a `--core-ok-soft` plate). A confirmed payment gives one `Core.pulse('flash')` (`13-billing.js`) and a notification.
+
+**`Core.lit(k)`** (`core-scene.js`): how bright the Core stays under an open window. `k` is clamped to 0…1; without an argument it returns the current value; it returns `Core`.
+
+- It acts only while the Core is `receded` (a dialog is open): the target brightness becomes `0.42 + (0.9 − 0.42) · k`, where 0.42 is the receded brightness and 0.9 the ceiling `LIT`. Heat, size and form of the receded Core do not change.
+- It writes `data-core-lit` on `<html>`: `"1"` up to 0.4, `"2"` up to 0.75, `"3"` above; the attribute is removed at 0. The fallback glow follows in steps: `:root[data-core-is=receded][data-core-lit="1|2|3"] .core-scene{--core-glow: .56 | .68 | .8}` (receded without it: .45).
+- The plans window calls `Core.lit(i / (n − 1))` for the plate in front (three plates: 0, 0.5, 1), and `Core.lit(0)` when the plans leave the window and after it closes. Nothing else uses it.
+- **Readability (12.10).** The reasoning in the code: only brightness is raised, and never above 90 % of the resting brightness, while 12.10 holds for the brightest moment of the brightest state, so the limit should hold. This was **not measured** (15.16).
+
+### 15.6 The model menu
+
+`#menu.menu.core-glass.core-glass--near[role=menu]` next to `#mbtn`; chat scripts still open it by toggling the class `open`. Built by `js/04-render.js`, decorated by `js/20-chat-ui.js` and `js/21-ultra.js`:
+
+`.core-menu__scroll` › `button.opt[data-m][role=menuitemradio][aria-checked]` › `span.core-mini[data-core-model]` + `div` (`b` name in the machine voice, `small` note) + `svg.ck`.
+
+| State | Hook | Look |
+| --- | --- | --- |
+| Selected | `.opt.on` | Lit row, the check mark `.ck` shows. |
+| Locked on the current plan | `.opt.locked`, `.lockt` | The name dims, the mini core is at 40 %, a tag names the plan that opens it. The click still leads to the plans window. |
+| Having issues | `i.cu-dot.bad`, `.core-mini[data-core-cond=flicker]` or `=dark` | The mini core flickers, or is dark when the model is down; the words («Есть сбои») stand next to the name as a `--core-bad-soft` tag. For a healthy model the words of `.cu-dot` are visually hidden and only read aloud. |
+| No models | `div.opt.opt-none` | Two lines of text, not a button. |
+
+- Closed: `opacity:0; visibility:hidden; pointer-events:none`, so its items are out of the Tab order. Open: grows from the bottom right corner over `--core-dur-2`.
+- Keyboard (`25-core-dialogs.js`): Arrow Down / Up on `#mbtn` opens the menu; opened from the keyboard, focus goes to the selected row. Inside: arrows cycle, Home, End; Esc and Tab close and return focus to `#mbtn`; choosing with the keyboard returns focus too. `aria-expanded` on `#mbtn` follows the class.
+- Up to 860 px the menu is a sheet from the bottom (72dvh at most, safe area, rows of 52 px). The dimming `.cu-scrim.on` and the swipe down are in `20-chat-ui.js`.
+- The same mini core with `data-core-cond` marks each row of the "Models" section of account settings (`.mst-row`).
+
+### 15.7 Limits
+
+The ring of section 6 replaces the bars. One helper builds it: `gwRing(left, L, label, size)` in `js/15-growth.js` (`size`: default `'sm'`, `'md'` = 28 px without a modifier, `'lg'`).
+
+- Account, plan section: `.acc-use` › ring `sm` + label + figures. Limits window (`js/19-limits.js`): `.lm-use` › ring `md`. "Daily limit reached" (`.gw-end`): a spent `lg` ring (ash), the time to reset `.gw-clock` in `--core-machine-5`, buttons stacked full width, the first one («continue», to the plans) amber.
+- A used-up line is `.acc-use.out` / `.lm-use.out`: the figures turn `--core-bad`.
+- Thin 2 px lines remain where a ring has no room: referral progress `.rc-prog .pc-bar` and the Ultra balance `.ulw-bar`. `core-dialogs.css` also still has rules for `.lm-meter`; no script of the chat page builds it any more.
+
+### 15.8 The image viewer
+
+A click on `img[data-zoom]` used to open a blank browser tab. `js/09-events.js` now calls `premierZoom(img)` when it exists; `25-core-dialogs.js` defines it and builds the window on first use:
+
+`#zoomWin.core-dialog.zoom` › `.core-dialog__pane.zoom-pane[role=dialog][aria-labelledby=zoomName]` › `.zoom-head` (`#zoomName`, `#zoomOpen`, `#zoomClose[data-core-close]`) + `.zoom-stage` › `img#zoomImg`.
+
+- It is born from the picture itself (`origin: img`), sized by the picture (320 to 1200 px wide). The picture lies on dense glass with nothing drawn over it. Esc, the close button, a click outside or a click on the picture close it.
+- The name is the picture's `alt`. `#zoomOpen` opens the old blank tab (a `data:` address cannot be opened directly). The two buttons take their labels from buttons the page already has (`#pOpen`, `#dclose`), so the script holds no texts.
+
+### 15.9 Notifications
+
+`toast(text, tone)` in `js/07-attachments.js` (and its English copy) is the one function every chat script calls. It now shows the Core capsule:
+
+```js
+function toast(t, tone) {                       // tone: 'ok' | 'bad' | 'warn' | none
+  if (t == null || t === '') return;
+  if (window.CoreUI) return CoreUI.toast(tone ? { text: t, tone } : { text: t });
+  (toast.q = toast.q || []).push([t, tone]);    // core-ui.js is deferred: earlier calls wait for DOMContentLoaded
+  …
+}
+```
+
+- The element `#toast` is gone from both pages. `window.toast` still serves `language.js`; the pass-through helpers `say` in `16-pwa.js` and `18-2fa.js` forward the tone.
+- Tones were given where the meaning was clear: `'ok'` for a completed action, `'bad'` for a failure, `'warn'` only for limits (browser storage, project files); mode switches stay neutral. The handover note counts 95 Russian / shared call sites: 29 ok, 35 bad, 5 warn, 24 neutral.
+- The tone is readable without colour: in `core-dialogs.css` the mark of `bad` is a cross and of `ok` a check (`.core-toast[data-tone] .core-toast__mark`). `bad` is announced as `role="alert"`, the rest as `status`.
+- The same message (tone, text and action label) arriving while it is still visible does not stack: the visible capsule restarts its timer.
+- With an announcement on screen the notifications stand under it (`.core:has(body>.ann) .core-toasts`).
+
+### 15.10 Tooltips
+
+No `title` is written on the chat page any more. Markup and scripts write `data-core-tip` (and `data-core-tip-key` for a key), and keep or add `aria-label`:
+
+```html
+<button class="ib" id="pReload" data-core-tip="Перезапустить" aria-label="Перезапустить">…</button>
+<button … id="dclose" aria-label="Закрыть" data-core-tip="Закрыть" data-core-tip-key="Esc">…</button>
+```
+```js
+b.dataset.coreTip = on ? 'Остановить запись' : 'Голосовой ввод'; b.setAttribute('aria-label', b.dataset.coreTip);
+```
+
+- Each chat page has 19 `data-core-tip` attributes; scripts had 78 `title` writes (47 Russian / shared, 31 English), now none. The one `title` left is on `<iframe id="pFrame">`, where it is the frame's accessible name.
+- A test forbids `title="…"` in strings, `.title =` and `setAttribute('title'` in every script the chat page loads (`document.title` is allowed), and requires `aria-label` on every icon button that has a tooltip.
+- Elements that had only a `title` got a name: `.busydot` has `role="img"` and `aria-label`; `<video>` / `<audio>` have `aria-label`.
+- The automatic conversion of `title` in `core-ui.js` (section 6) still exists for other pages.
+
+### 15.11 Confirmation capsules instead of the browser's boxes
+
+All 24 call sites of `confirm`, `prompt` and `alert` in the scripts the chat page loads (37 with the English copies) use the capsule of section 6: 17 confirmations, 5 prompts, 2 alerts. Deleting, unpublishing, leaving a team and disconnecting are the destructive variant, with the product's own word on the confirm button where the dictionary has one.
+
+```js
+if (!(await CoreUI.confirm({ text: `Удалить проект «${p.name}»? …`, ok: 'Удалить проект', danger: true }))) return;   // async handler
+CoreUI.confirm({ text: 'Удалить этот чат?', ok: 'Удалить', danger: true }).then((ok) => { if (!ok) return; … });     // sync listener
+CoreUI.prompt({ text: 'Скопируйте ссылку:', value: link });   // the clipboard refused: a field with the link, selected
+```
+
+- **One native call is left on purpose:** `language.js` shows its message with `window.toast`, else `CoreUI.alert`, else the browser's `alert`. The last branch is for pages that have neither (login, landing, developers at the time of step 5); on the chat page it cannot run. The test allows exactly this one.
+- What changed around the calls, because the native boxes blocked and these do not: `stopPropagation` / `preventDefault` stay before the wait; ids are read before the wait and the object is found again by id after it (a sync may replace objects meanwhile, `08-projects.js`); state is checked again after the wait (`activateVersion` in `06-pane.js`).
+- **Esc under a capsule closes only the capsule.** `09-events.js` sets a flag `capsuleEsc` in the capture phase and its global Esc handler skips; `24-core-work.js` returns when the event is already handled or a capsule is open; the outside-click closer of the computer menu in `agent.js` ignores clicks inside `.core-capsule-layer`. A new global Esc or outside-click handler must do the same.
+- The full table (file, variant, label, what was tried in the browser) is in `step5-notes/native-boxes-and-tooltips.md`.
+
+### 15.12 Cards over the page
+
+Both are near glass, are in the light scope (15.3) and appear with `core-pop` when motion is allowed.
+
+- **Install card** (`js/16-pwa.js`): `.pwa-card.core-glass.core-glass--near[role=dialog][data-core-at="bottom right"]` › `img`, `.pwa-txt` (`b`, `span`), `.pwa-act` (`.btn.pwa-go`, `.pwa-x`). Fixed at the bottom right; up to 600 px it spans the bottom edge above the safe area.
+- **Announcement and maintenance banner** (`announce.js`; only the two chat pages load it today): when `<html>` has the class `core` it builds `.ann.core-glass.core-glass--near[role=status][data-kind][data-core-at="top"]` › `i.ann-mark`, `.ann-tx` (text and link), optional close button `.ann-x`; otherwise it keeps its old inline look. `data-kind` is `info`, `warn`, `success`, `promo` or `maint`; the mark is `--core-warn`, `--core-ok` or `--core-bad` for `warn`, `success`, `maint` and neutral for the rest. **The `.ann` rules are in `core-dialogs.css`:** if a later step adds `announce.js` to another Core page, that page needs these rules, or the banner is unstyled.
+
+### 15.13 The offline page
+
+`public/offline.html` is what the service worker shows when a navigation fails. It is drawn in the Core system but is **self-contained on purpose**: no stylesheet, no script file, because the Core files may not be in the cache when there is no network. The token values are written in the file as its own short names (`--scene:#0B0A08`, `--text:#F4EEE5`, `--heat-3:#FF8B2C`; light theme `--scene:#F1ECE3`, `--text:#1B1714`, `--heat-3:#EE6A12`); a test checks that these values exist in `core-tokens.css`. If a token changes, change it here by hand.
+
+- Scene colour with a faint glow, a cooled Core drawn as an inline SVG of ash points, Onest, one amber action, both themes by the system setting, safe areas, a focus ring, no transition under reduced motion. Texts and behaviour are unchanged (Russian, English by the browser language, reload when the network returns).
+- `sw.js` puts `/offline.html` in its cache at install time and the cache name is still `premier-v1`, so an installed app gets the new page only when the service worker reinstalls (15.16).
+
+### 15.14 Amber on these surfaces
+
+The rule of section 3 holds: amber is the one main action of a window, and the place where the AI works. In `core-dialogs.css` the heat tokens appear in two families only:
+
+- `.core :where(.modal,.ulw) :where(.btn,.tm-btn):where(.pri)` — the main action of a window (rest, hover, active).
+- `.core .plan.fwd .btn[data-buy]:not(:disabled)` and `.core .plans:not([data-sel]) .plan.hot .btn[data-buy]:not(:disabled)` — the buy button of the plate in front.
+
+Where a window has several `.pri` buttons, the family rules cool the extra ones to glass: `.plan .btn.pri`, `.gw-trial .btn.pri`, and a guard for a second `.pri` in the "limit reached" window, `.gw-end .gw-acts .btn.pri~.btn.pri` (today's markup has one). The loading rows `.p-skel` use `--core-point`. The test fails when a rule that mentions `--core-heat-1…5` has a selector outside this list: `.btn.pri`, `.pri`, `core-ring`, `.lm-ring`, `.ul-`, `.plan`, `.mcore`, `core-mini`, `.gw-`, `.tm-`, `.ann`, `.pay`. The list is wider than today's use; keep new amber inside the two families unless there is a reason.
+
+### 15.15 Tests
+
+`tests/core-dialogs.test.js`, 11 checks, no browser: (1) the chat pages load only Core stylesheets, `core-dialogs.css` and `25-core-dialogs.js` last, same versions in RU and EN, old files still on disk; (2) the window markup and the bridge; (3) no browser boxes in chat scripts except the one in `language.js`, confirmations are awaited, deletions are destructive, the Esc flag; (4) no `title` in pages (except the frame) or scripts; (5) notifications through the capsule with three tones and the queue; (6) `core-dialogs.css`: no literal colours except the QR code, no old tokens, no `cursor:pointer`, durations and fonts from tokens only, no own blur, loops only when motion is allowed, the phone sheet; (7) amber (15.14) and no solid red on destructive buttons; (8) plan plates, `Core.lit` and its ceiling, the payment flash; (9) the model menu and the rings; (10) the viewer; (11) the offline page and `sw.js`.
+
+Older checks rewritten in this step, same intent, asserted in the new system; none deleted:
+
+| File | What changed |
+| --- | --- |
+| `tests/core-chat.test.js` | The page loads only Core files in order and no old stylesheet; no `#toast`; `gwRing` has a size parameter. Its bridge check still reads `chat-legacy.css` (15.1). |
+| `tests/core-work.test.js` | `24-core-work.js` is followed by `25-core-dialogs.js`; the buttons of the result window are expected with `data-core-tip` and `aria-label` instead of `title`. |
+| `tests/chat-ui.test.js`, `tests/ultra.test.js`, `test/team.test.js` | The model menu, Ultra and team styles are looked for in `core-dialogs.css`; the pages must not load the bridge. |
+| `tests/chat-visual.test.js` | The time of an answer is expected in `data-core-tip`, not `title`. |
+| `test/versions-ui-smoke.js` | Clicks the capsule's confirm button instead of auto-accepting a native dialog. Playwright; not part of `npm test`; not run. |
+| `tests/dev-cabinet-ultra.test.js`, `test/twofa.test.js` | Pinned `21-ultra.js?v=6` and `18-2fa.js?v=1`; now "not lower than 7, same in both languages" and "any number". The first was a real `npm test` failure caused by this step. |
+
+### 15.16 Not verified in step 5
+
+Checked, as the handover note records it: the chat screen outside the windows against the step 4 build by computed styles (light theme, 1440, no differences; the phone comparison was not repeated after its last fix); keyboard in Chrome, dark theme, 1440 (a window opened with Enter takes focus, Tab stays inside, Esc closes and focus returns; with a capsule over a window the first Esc closes only the capsule; the model menu from the keyboard; a tooltip on keyboard focus); each replaced browser box for yes, no, Esc and Enter, with the cloud, team and helper back ends mocked. Everything below is open.
+
+- **The visual review is incomplete.** Screenshots exist for most surfaces at 1440 in both themes and at 390 in the dark theme; about half were looked at. Nothing was captured in the light theme at 390. Most surfaces at 390 and most surfaces in the light theme were not reviewed. Ultra history, the computer-access window, the payment waiting state and the project with files were captured but not reviewed. The voice list was never seen with real voices. Nothing was looked at again after the last CSS fixes. The second session opened two screenshots (plans and account settings, dark, 1440) without a careful review and without fixes. No per-surface status exists; `step5-notes/inventory-before.md` is the list of surfaces before the step.
+- **Reduced motion** was not checked for windows.
+- **Keyboard** was not checked in plans, limits, Ultra credits, team, project, sharing, the viewer, the install card and the banner.
+- **Motion was not seen in motion.** The birth of a window, the turn between sections and the height glide were not recorded or measured; smoothness of opening and closing was not measured.
+- **`Core.lit` was not measured against the readability limit of 12.10.** The measuring test needs the `gl` package, which was not installed. Until it is run, the claim in 15.5 is reasoning, not a result.
+- **Voice.** The recording state and reading aloud keep their step 3 look; nothing was designed for them.
+- **The offline page** was captured once in the dark theme at 1440 and in the light theme at 390 and looked at once. Not checked: keyboard, reduced motion, the English wording. The product has no "update available" state.
+- **The service worker cache name** `premier-v1` was not changed, so returning users of the installed app keep the old offline page until the worker reinstalls. Whether to rename the cache is undecided.
+- **The bridge files** `public/css/chat-legacy.css` and `scripts/build-chat-legacy.py` are still on disk and still tested (15.1). Delete now or in step 8: undecided.
+- **`test/versions-ui-smoke.js`** was changed and never run.
+- **The folder `test/`** (outside `npm test`) was being run file by file and was interrupted. `admin-model-ids` fails 5 of 7; `artifact-server` and `assets` ran into the 240 s limit. None of the three was investigated, so it is not known whether step 5 caused them. Passed: `admin-panel`, `agent`, `artifact-edit`, `blog`, `browser-adapters`, `browser-proxy`, `browser`, `chat-policy`, `twofa`, `push`, `team`. The rest was not run.
+- **The full `npm test`** was last run before the final three test edits of the step (470 tests, 448 pass, 13 fail, 9 skipped; 12 of the failures are the cloud symlink checks, the helper signing checks and two checks that depend on them, the same groups that failed before any change of the step; the 13th was the version check since rewritten). It was not run again in step 5; "the same 12 and nothing else" after the edits is a prediction.
+- The real cloud, team and helper back ends behind the capsules (mocked), real payment providers, the keyboard inset `--dlg-kb` on a real iPhone: the handover note records no check.
+- Still open from earlier steps: a real graphics card, Safari, Firefox, a real phone, a screen reader (13.10, 14.8).
+
+Two things seen in the code while writing this section, not tested:
+
+- The model menu becomes a sheet up to **860 px** (`core-dialogs.css`), but `20-chat-ui.js` switches the dimming `.cu-scrim` with its own limit of **700 px**. Between the two the sheet opens without dimming.
+- 13.4 expected step 5 to add the windows to the light scope. The code adds `#menu, .pwa-card, .ann` only.

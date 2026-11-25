@@ -200,7 +200,8 @@ test('team: скрипты подключены на страницах RU/EN и
   }
   for (const s of ['.tm-acc', '.tm-box', '.tm-row', '.tm-invite']) assert.ok(rd('core/core-dialogs.css').includes(s), 'core-dialogs.css рисует ' + s);
   for (const f of ['js/10-account.js', 'en/js/10-account.js']) { const j = rd(f); assert.match(j, /premierTeam\.row\(B\)/, f); assert.match(j, /premierTeam\.bind\(el\)/, f); }
-  for (const f of ['index.html', 'en/index.html']) { const h = rd(f); assert.match(h, /id="teamStrip" hidden/, f); assert.match(h, /team-offer\.js/, f); assert.match(h, /landing\.css\?v=\d+/, f); }
+  for (const f of ['index.html', 'en/index.html']) { const h = rd(f); assert.match(h, /id="teamStrip" hidden/, f); assert.match(h, /team-offer\.js/, f); assert.match(h, /\/core\/core-landing\.css\?v=\d+/, f); } // шаг 6: полоса «Для команд» — в core-landing.css (.team-strip)
+  assert.ok(rd('core/core-landing.css').includes('.team-strip'), 'core-landing.css рисует .team-strip');
   const p = rd('panel.html'); assert.match(p, /v-teams\.js\?v=1/); assert.match(p, /shell\.js\?v=6/);
   assert.match(rd('admin/shell.js'), /v: 'teams'/);
   const t = rd('js/17-team.js'); assert.match(t, /Командный тариф/); assert.match(t, /Team plan/); assert.match(t, /premierTeam/);

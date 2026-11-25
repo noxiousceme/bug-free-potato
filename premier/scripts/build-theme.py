@@ -196,7 +196,13 @@ def sources(names):
 def main():
     OUT.mkdir(exist_ok=True)
     for key, (names, out) in TARGETS.items():
-        rules = walk(sources(names))
+        css = sources(names)
+        if not css.strip():
+            # страница переехала на Core (чат — шаг 3, вход — шаг 6) и встроенных стилей больше не несёт:
+            # прежний файл темы остаётся на диске нетронутым до шага 8, перезаписывать его пустым нельзя
+            print(f'{out}: skipped, no styles left in {", ".join(names)} (page moved to Core)')
+            continue
+        rules = walk(css)
         head = f'/* Сгенерировано scripts/build-theme.py из {", ".join(names)} — не править вручную. */\n'
         (OUT / out).write_text(head + '\n'.join(rules) + '\n')
         print(f'{out}: {len(rules)} rules')
