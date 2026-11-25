@@ -12,15 +12,15 @@
 <meta property="og:image" content="/og-protrial.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="/og-protrial.png">
-<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <link rel="alternate" hreflang="ru" href="/protrial">
 <link rel="alternate" hreflang="en" href="/en/protrial">
 <link rel="alternate" hreflang="x-default" href="/protrial">
 <script>document.documentElement.classList.add('js')</script>
 <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/jetbrains-mono-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-trial.css?v=1">
+<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"></noscript><link rel="stylesheet" href="/core/core-trial.css?v=2">
 </head>
 <body>
 <div class="core-scene" aria-hidden="true"></div>
@@ -41,7 +41,7 @@
 </defs></svg>
 
 <!-- навигация -->
-<header class="nav" id="nav">
+<header class="nav core-glass core-glass--near" data-core-at="top" id="nav">
   <div class="wrap">
     <a href="/" class="brand">
       <span class="nav-mark"><img src="/icon-p-amber.svg" alt="" width="26" height="26" style="display:block"></span>
@@ -63,7 +63,7 @@
   <!-- ===== HERO ===== -->
   <div class="hero">
     <div class="glow" aria-hidden="true"></div>
-    <div class="wrap">
+    <div class="wrap plate core-glass core-glass--mid">
       <div class="hero-kicker rv">
         <span class="kicker-dot" aria-hidden="true"></span>
         ПОДАРОК · 24 ЧАСА
@@ -90,7 +90,7 @@
 
   <!-- ===== КАРТОЧКИ ===== -->
   <section id="features">
-    <div class="wrap center">
+    <div class="wrap pane core-glass core-glass--far center">
       <div class="eyebrow rv">Что входит</div>
       <h2 class="h2 rv">Все возможности Pro — на 24 часа</h2>
       <div class="feat-grid" id="featGrid">
@@ -134,7 +134,7 @@
 
   <!-- ===== ТАБЛИЦА Free vs Pro ===== -->
   <section id="compare" style="padding-top:0">
-    <div class="wrap">
+    <div class="wrap pane core-glass core-glass--far">
       <div class="eyebrow rv center">Сравнение</div>
       <h2 class="h2 rv center">Что меняется</h2>
       <table class="cmp-table rv" aria-label="Free версус Pro">
@@ -148,17 +148,17 @@
         <tbody>
           <tr>
             <td class="feat-label">Сообщений в день</td>
-            <td style="text-align:center;color:var(--p-muted)" id="cmp-free-msgs">ограничено</td>
+            <td style="text-align:center" id="cmp-free-msgs">ограничено</td>
             <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>300 в день</span></td>
           </tr>
           <tr>
             <td class="feat-label">Запуск кода Python</td>
-            <td style="text-align:center;color:var(--p-muted)" id="cmp-free-code">ограничено</td>
+            <td style="text-align:center" id="cmp-free-code">ограничено</td>
             <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>50 в день</span></td>
           </tr>
           <tr>
             <td class="feat-label">Создание сайтов</td>
-            <td style="text-align:center;color:var(--p-muted)" id="cmp-free-sites">ограничено</td>
+            <td style="text-align:center" id="cmp-free-sites">ограничено</td>
             <td class="pro-col" style="text-align:center"><span class="ck"><svg><use href="#i-check"/></svg>30 в день</span></td>
           </tr>
           <tr>
@@ -178,7 +178,7 @@
 
   <!-- ===== КАК ЭТО РАБОТАЕТ ===== -->
   <section id="how">
-    <div class="wrap center">
+    <div class="wrap pane core-glass core-glass--far center">
       <div class="eyebrow rv">Три шага</div>
       <h2 class="h2 rv">Как это работает</h2>
       <div class="steps">
@@ -203,7 +203,7 @@
 
   <!-- ===== FAQ ===== -->
   <section id="faq" style="padding-top:0">
-    <div class="wrap">
+    <div class="wrap pane core-glass core-glass--far">
       <div class="eyebrow rv center">Вопросы</div>
       <h2 class="h2 rv center">Частые вопросы</h2>
       <div class="faq rv">
@@ -234,7 +234,7 @@
   <!-- ===== FINAL CTA ===== -->
   <div class="final">
     <div class="wrap">
-      <div class="final-card rv" id="finalCard">
+      <div class="final-card rv core-glass core-glass--mid" id="finalCard">
         <div class="glow" aria-hidden="true"></div>
         <div class="badge-free"><i></i>Бесплатно</div>
         <h2 class="h2">Заберите Pro на сегодня</h2>
@@ -249,7 +249,7 @@
   </div>
 </main>
 
-<footer>
+<footer class="core-glass core-glass--far" data-core-at="bottom">
   <div class="wrap">
     <a href="/" class="brand" style="font-size:15px">
       <span class="nav-mark" style="width:22px;height:22px"><img src="/icon-p-amber.svg" alt="" width="22" height="22" style="display:block"></span>
@@ -433,6 +433,6 @@ if (new URLSearchParams(location.search).has('claimed')) {
   });
 }
 </script>
-<script defer src="/core/core-trial.js?v=1"></script>
+<script defer src="/core/core-trial.js?v=2"></script>
 </body>
 </html>
