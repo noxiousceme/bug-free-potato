@@ -8,10 +8,10 @@
 <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Premier">
 <meta name="description" content="ИИ, который не только отвечает, но и сам запускает код в облачном Linux: GPT, Gemini, DeepSeek, Kimi и Qwen в одном чате. Сайты, игры и Python без VPN и зарубежной карты. Начните бесплатно.">
 <!--SEO-->
-<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <script>document.documentElement.classList.add('js')</script>
 <script>(function(){try{var r=new URLSearchParams(location.search).get('ref');if(r&&/^[a-zA-Z0-9_-]{8,64}$/.test(r)){localStorage.setItem('premier:ref',r);var u=new URL(location.href);u.search='';history.replaceState(null,'',u.pathname);}}catch(e){}})();</script>
-<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-landing.css?v=1">
+<link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2" media="print" onload="this.media='all'"><link rel="stylesheet" href="/core/core-scene.css?v=2" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"></noscript><link rel="stylesheet" href="/core/core-landing.css?v=2">
 <script src="/language.js?v=2"></script>
 </head>
 <body>
@@ -33,7 +33,7 @@
 <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
 </defs></svg>
 
-<header class="nav" id="nav">
+<header class="nav core-glass core-glass--near" data-core-at="top" id="nav">
   <div class="wrap">
     <a href="/" class="brand"><span class="mark"><img src="/icon-p-amber.svg" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></span>Premier</a>
     <nav class="links" aria-label="Разделы"><a href="#features">Возможности</a><a href="#preview">Сайты</a><a href="#pricing">Тарифы</a><a href="#reviews">Отзывы</a><a href="#faq">Вопросы</a><a href="/blog">Гайды</a><a href="/status">Модели</a></nav>
@@ -48,12 +48,14 @@
   <div class="hero">
     <div class="glow" aria-hidden="true"></div>
     <div class="wrap">
+      <div class="hero-copy core-glass core-glass--far">
       <div class="hero-kicker"><span class="kicker-mark" aria-hidden="true"></span><span id="kickerText">ТОПОВЫЕ НЕЙРОСЕТИ В ОДНОМ ОКНЕ</span></div>
       <h1>Пиши код, создавай сайты<br><span>и решай задачи в одном чате</span></h1>
       <p class="lead">От идеи — к готовому результату: ответы, код, сайты и игры.</p>
       <div class="cta"><a href="/chat" class="btn pri">Попробовать бесплатно<svg aria-hidden="true"><use href="#i-arrow"/></svg></a><a href="#features" class="btn ghost">Возможности</a></div>
       <p class="hero-offer" id="heroOffer" hidden></p>
-      <div class="card show rv" id="preview" aria-label="Демонстрация создания сайта">
+      </div>
+      <div class="card show rv core-glass core-glass--mid" id="preview" aria-label="Демонстрация создания сайта">
       <div class="demo-tabs" id="demoTabs" role="tablist" aria-label="Примеры">
         <button type="button" class="on" data-demo="0">Игра «Змейка»</button>
         <button type="button" data-demo="1">Сайт</button>
@@ -71,13 +73,15 @@
           <div class="site" id="siteBox"><iframe id="siteFrame" title="Пример: игра «Змейка»" src="/demo/snake.html?v=2" sandbox="allow-scripts"></iframe><div class="ld"><div><i></i>Загружаем…</div></div></div>
         </div>
       </div>
+      <div class="hero-meta core-glass core-glass--far">
       <div class="hero-facts"><span><svg aria-hidden="true"><use href="#i-check"/></svg>Без VPN</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>Без зарубежной карты</span><span><svg aria-hidden="true"><use href="#i-check"/></svg>Есть бесплатный тариф</span></div>
       <div class="hero-models" id="heroModels"><span>Модели, которые внутри</span></div>
+      </div>
     </div>
   </div>
 
   <section id="features">
-    <div class="wrap">
+    <div class="wrap pane core-glass core-glass--far">
       <div class="eyebrow rv">Возможности</div>
       <h2 class="h2 rv">Всё, что нужно для работы с ИИ</h2>
       <p class="sub rv">Без вкладок, подписок на десяток сервисов и сложных настроек.</p>
@@ -99,7 +103,7 @@
   </section>
 
   <section id="pricing" style="padding-top:40px">
-    <div class="wrap center">
+    <div class="wrap pane core-glass core-glass--far center">
       <div class="eyebrow rv">Тарифы</div>
       <h2 class="h2 rv">Начните бесплатно. Улучшайте, когда понадобится.</h2>
       <p class="sub rv" id="trialLine">Без автопродления: платите за месяц — и пользуйтесь месяц.</p>
@@ -112,7 +116,7 @@
   </section>
 
   <section id="reviews" aria-labelledby="reviewTitle">
-    <div class="wrap center">
+    <div class="wrap pane core-glass core-glass--far center">
       <div class="visual-label">СООБЩЕСТВО</div>
       <h2 class="h2" id="reviewTitle">Отзывы</h2>
       <p class="sub">Что говорят пользователи</p>
@@ -123,7 +127,7 @@
   </section>
 
   <section id="faq" aria-labelledby="faqTitle">
-    <div class="wrap center">
+    <div class="wrap pane core-glass core-glass--far center">
       <div class="visual-label">ВОПРОСЫ</div>
       <h2 class="h2" id="faqTitle">Частые вопросы</h2>
       <p class="sub">Коротко про оплату, лимиты и тарифы</p>
@@ -143,7 +147,7 @@
 
   <div class="final">
     <div class="wrap">
-      <div class="card rv"><div class="glow"></div>
+      <div class="card rv core-glass core-glass--mid"><div class="glow"></div>
         <div style="position:relative">
           <h2 class="h2">Начните с одного хорошего вопроса</h2>
           <p class="sub">Остальное Premier разложит на понятные шаги.</p>
@@ -172,7 +176,7 @@
 </dialog>
 <div class="rv-toast" id="reviewToast" role="status" aria-live="polite"></div>
 
-<footer>
+<footer class="core-glass core-glass--far" data-core-at="bottom">
   <div class="wrap">
     <a href="/" class="brand" style="font-size:15px"><span class="mark" style="width:22px;height:22px"><img src="/icon-p-amber.svg" alt="" style="width:100%;height:100%;display:block"></span>Premier</a>
     <span>© <span id="yr"></span></span>
@@ -387,7 +391,7 @@ setTimeout(() => document.querySelectorAll('.rv:not(.in)').forEach((el) => { if 
 })();
 </script>
 <script>document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('[data-open]'); if (a) { try { localStorage.setItem('premier:open', a.dataset.open); } catch {} } });</script>
-<script defer src="/core/core-landing.js?v=1"></script>
+<script defer src="/core/core-landing.js?v=2"></script>
 <script src="/team-offer.js?v=1" defer></script>
 </body>
 </html>
