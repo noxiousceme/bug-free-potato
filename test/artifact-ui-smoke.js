@@ -32,7 +32,7 @@ test('UI: закрепление, длинный чат, выбор старой
   });
   const sendAndWait = async (text) => {
     await page.evaluate((text) => send(text), text);
-    await page.waitForFunction(() => !busy && S.chats.find((c) => c.id === S.cur)?.msgs.at(-1)?.live === false);
+    await page.waitForFunction(() => !anyBusy() && S.chats.find((c) => c.id === S.cur)?.msgs.at(-1)?.live === false);
   };
   await page.goto(s.base + '/chat'); await page.waitForFunction(() => MODELS.length > 0);
   await sendAndWait('создай 3д поле от первого лица');
