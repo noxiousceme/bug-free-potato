@@ -168,3 +168,7 @@ body{min-height:100vh;min-height:100dvh}
 .sc-term pre{margin:0;font:var(--core-machine-2);font-variant-ligatures:none;white-space:pre}
 .sc-t-red{color:var(--core-term-red)}.sc-t-green{color:var(--core-term-green)}.sc-t-yellow{color:var(--core-term-yellow)}.sc-t-blue{color:var(--core-term-blue)}.sc-t-magenta{color:var(--core-term-magenta)}.sc-t-cyan{color:var(--core-term-cyan)}.sc-t-dim{color:var(--core-term-dim)}
 .sc-t-cursor{background:var(--core-term-cursor)}
+/* 19 Рабочие экраны (шаг 7): панели стоят прямо на сцене, чтобы плотное стекло было видно как на своих страницах */
+.sc-tools{display:grid;gap:var(--core-s-4);min-width:0}
+.sc-tools__col{display:grid;gap:var(--core-s-3)}
+.sc-tools__states{display:flex;flex-wrap:wrap;gap:var(--core-s-2) var(--core-s-5);margin:0}

@@ -1,18 +1,19 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" class="core" data-core-is="still" data-adm="login">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <title>Панель · Premier</title>
 <link rel="icon" type="image/svg+xml" href="/icon-p-amber.svg"><link rel="icon" type="image/png" href="/icon-p-2.png">
 <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>(function(){try{var t=JSON.parse(localStorage.getItem('premier-admin:prefs')||'{}').theme;if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-<link rel="stylesheet" href="/tokens.css?v=3">
-<link rel="stylesheet" href="/admin/admin.css?v=1">
+<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"><link rel="stylesheet" href="/core/core-tools.css?v=1"><link rel="stylesheet" href="/core/core-admin.css?v=1">
+<script defer src="/core/core-ui.js?v=2"></script><script defer src="/core/core-scene.js?v=4"></script>
 </head>
-<body>
+<body class="adm">
+<div class="core-scene" aria-hidden="true"></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
 <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 19V9l8-5 8 5v10a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1Z"/></symbol>
 <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
@@ -75,69 +76,69 @@
 </svg>
 
 <div class="login" id="login" hidden>
-  <form class="lcard" id="loginF" autocomplete="on">
+  <form class="lcard core-glass core-glass--mid core-glass--work" id="loginF" autocomplete="on" data-core-at="core">
     <div class="brand"><span class="mark"><img src="/icon-p-amber.svg" alt=""></span>Premier</div>
     <div id="step1">
       <h1>Вход в панель</h1>
       <p class="lead">Управление Premier</p>
-      <label class="field"><span>Логин</span><input id="lg" autocomplete="username" placeholder="owner" spellcheck="false" autocapitalize="off"><small>Владелец может оставить поле пустым</small></label>
-      <label class="field"><span>Пароль</span><input id="pw" type="password" autocomplete="current-password" placeholder="Пароль" required autofocus></label>
-      <label class="check"><input type="checkbox" id="remember">Запомнить на этом устройстве на 7 дней</label>
+      <label class="field core-field"><span class="core-field__label">Логин</span><input class="core-input" id="lg" autocomplete="username" placeholder="owner" spellcheck="false" autocapitalize="off"><small class="core-field__hint">Владелец может оставить поле пустым</small></label>
+      <label class="field core-field"><span class="core-field__label">Пароль</span><input class="core-input" id="pw" type="password" autocomplete="current-password" placeholder="Пароль" required autofocus></label>
+      <label class="check core-check"><input type="checkbox" id="remember"><span>Запомнить на этом устройстве на 7 дней</span></label>
     </div>
     <div id="step2" hidden>
       <h1>Подтвердите вход</h1>
       <p class="lead">Введите 6 цифр из приложения-аутентификатора</p>
-      <label class="field"><input id="code" class="code-inp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Код подтверждения"></label>
+      <label class="field core-field"><input id="code" class="code-inp core-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Код подтверждения"></label>
     </div>
     <div class="msg err" id="lmsg" role="alert"></div>
-    <button class="btn pri block" id="lbtn">Войти</button>
-    <div class="lfoot"><button type="button" class="btn ghost sm" id="back" hidden>← Другой аккаунт</button></div>
+    <button class="btn pri block core-btn core-btn--main core-btn--lg core-btn--block" id="lbtn">Войти</button>
+    <div class="lfoot"><button type="button" class="btn ghost sm core-btn core-btn--quiet core-btn--sm" id="back" hidden>← Другой аккаунт</button></div>
   </form>
 </div>
 
 <div class="app" id="app" hidden>
-  <nav class="nav" id="nav" aria-label="Разделы">
+  <nav class="nav core-glass core-glass--far core-glass--work" id="nav" aria-label="Разделы" data-core-at="left">
     <div class="brand"><span class="mark"><img src="/icon-p-amber.svg" alt=""></span><span class="t">Premier</span><small>Панель</small></div>
     <div class="scroll" id="navList"></div>
-    <div class="foot"><button class="me-btn" id="meBtn" aria-haspopup="menu"></button></div>
+    <div class="foot"><button class="me-btn" id="meBtn" aria-haspopup="menu" aria-expanded="false"></button></div>
   </nav>
   <div class="overlay" id="overlay"></div>
   <main class="main">
-    <header class="top">
-      <button class="ib burger" id="burger" aria-label="Меню"><svg><use href="#i-menu"/></svg></button>
-      <button class="ib mini-toggle" id="miniT" title="Свернуть меню" aria-label="Свернуть меню"><svg><use href="#i-sidebar"/></svg></button>
-      <div class="ttl"><h1 id="vtitle"></h1><p id="vsub"></p></div>
+    <header class="top core-glass core-glass--far core-glass--work" data-core-at="top">
+      <button class="ib burger core-btn core-btn--icon core-btn--quiet" id="burger" aria-label="Меню"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <button class="ib mini-toggle core-btn core-btn--icon core-btn--quiet" id="miniT" data-core-tip="Свернуть меню" aria-label="Свернуть меню"><svg class="ic"><use href="#i-sidebar"/></svg></button>
+      <div class="ttl"><h1 id="vtitle" class="core-head__title"></h1><p id="vsub" class="core-head__sub"></p></div>
       <span id="pills" class="row"></span>
       <div id="vact"></div>
-      <button class="search-btn" id="searchBtn" aria-label="Поиск"><svg><use href="#i-search"/></svg><span>Поиск</span><kbd>Ctrl K</kbd></button>
-      <button class="ib" id="refreshBtn" title="Обновить раздел" aria-label="Обновить"><svg><use href="#i-refresh"/></svg></button>
+      <button class="search-btn" id="searchBtn" aria-label="Поиск"><svg class="ic"><use href="#i-search"/></svg><span>Поиск</span><kbd class="core-kbd">Ctrl K</kbd></button>
+      <button class="ib core-btn core-btn--icon core-btn--quiet" id="refreshBtn" data-core-tip="Обновить раздел" aria-label="Обновить"><svg class="ic"><use href="#i-refresh"/></svg></button>
     </header>
     <div class="view" id="viewRoot"></div>
   </main>
 </div>
-<div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-label="Карточка"></aside>
-<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="scrim" id="scrim" hidden></div>
+<div class="core-dialog adm-drawer" id="drawerShell" hidden><aside class="drawer core-dialog__pane" id="drawer" role="dialog" aria-modal="true" aria-label="Карточка"></aside></div>
+<div class="toasts" id="toasts" aria-live="polite" hidden></div>
 
 <script src="/vendor/qrcode.js?v=1"></script>
-<script src="/admin/core.js?v=1"></script>
-<script src="/admin/ui.js?v=1"></script>
-<script src="/admin/v-dashboard.js?v=2"></script>
-<script src="/admin/v-funnel.js?v=1"></script>
-<script src="/admin/v-push.js?v=1"></script>
-<script src="/admin/v-teams.js?v=1"></script>
-<script src="/admin/v-users.js?v=3"></script>
-<script src="/admin/v-payments.js?v=2"></script>
-<script src="/admin/v-promos.js?v=1"></script>
-<script src="/admin/v-referrals.js?v=1"></script>
-<script src="/admin/v-legacy.js?v=10"></script>
-<script src="/admin/v-models.js?v=1"></script>
-<script src="/admin/v-api.js?v=1"></script>
-<script src="/admin/v-reviews.js?v=1"></script>
-<script src="/admin/v-content.js?v=1"></script>
-<script src="/admin/v-blog.js?v=1"></script>
-<script src="/admin/v-system.js?v=1"></script>
-<script src="/admin/v-team.js?v=1"></script>
-<script src="/admin/shell.js?v=6"></script>
+<script src="/admin/core.js?v=2"></script>
+<script src="/admin/ui.js?v=2"></script>
+<script src="/admin/v-dashboard.js?v=3"></script>
+<script src="/admin/v-funnel.js?v=2"></script>
+<script src="/admin/v-push.js?v=2"></script>
+<script src="/admin/v-teams.js?v=2"></script>
+<script src="/admin/v-users.js?v=4"></script>
+<script src="/admin/v-payments.js?v=3"></script>
+<script src="/admin/v-promos.js?v=2"></script>
+<script src="/admin/v-referrals.js?v=2"></script>
+<script src="/admin/v-legacy.js?v=11"></script>
+<script src="/admin/v-models.js?v=2"></script>
+<script src="/admin/v-api.js?v=2"></script>
+<script src="/admin/v-reviews.js?v=2"></script>
+<script src="/admin/v-content.js?v=2"></script>
+<script src="/admin/v-blog.js?v=2"></script>
+<script src="/admin/v-system.js?v=2"></script>
+<script src="/admin/v-team.js?v=2"></script>
+<script src="/admin/shell.js?v=7"></script>
 </body>
 </html>
