@@ -30,7 +30,7 @@ It is written for someone who has only this file and the files it names.
 | `tests/core-chat.test.js` | Automated checks of section 13. |
 | `public/core/core-work.css` | What the AI makes and does: result window, work log, code blocks, result cards and media, cloud computer, folder, helper (section 14). |
 | `public/core/core-dialogs.css` | Windows, menus, tooltips, notifications, confirmation capsules and the account, billing and team contents on the chat page (section 15). |
-| `public/core/core-landing.css`, `core-landing.js`, `core-login.css`, `core-login.js`, `core-trial.css`, `core-trial.js` | Landing, login and trial pages (step 6, section 16): panes and plates on real glass, the scroll flight through `Core.pose`, the login flight. |
+| `public/core/core-landing.css`, `core-landing.js`, `core-login.css`, `core-login.js` | Landing and login pages (step 6, section 16): panes and plates on real glass, the scroll flight through `Core.pose`, the login flight. |
 | `public/js/25-core-dialogs.js` | Glue: turns the shared window's `on` class into a Core window; plan cards, account sections, the model menu keys. No chat logic, no texts. |
 | `tests/core-dialogs.test.js` | Automated checks of section 15. |
 | `public/js/24-core-work.js` | Glue for section 14: divider, birth of the result window, phone switch, keyboard, terminal theme. No chat logic, no texts. |
@@ -1135,14 +1135,14 @@ The chat page no longer loads `tokens.css` or `chat-legacy.css`. It loads `core/
 - Scrolling with a keyboard-focused tooltip on a page long enough to scroll (the empty chat cannot scroll).
 - Escape in the work menu when an upper Core menu or window consumed the key.
 
-## 16. Pages before the product: landing, login, trial (step 6)
+## 16. Pages before the product: landing and login (step 6)
 
-Three pages a visitor sees before the product: the landing (`public/index.html`, `public/en/index.html`), the login page (`public/login.html`, `public/en/login.html`) and the trial page (`public/protrial.html`, `public/en/protrial.html`). Stylesheets: `core/core-landing.css`, `core/core-login.css`, `core/core-trial.css`. Scripts: `core/core-landing.js`, `core/core-login.js`, `core/core-trial.js`.
+Two pages a visitor sees before the product: the landing (`public/index.html`, `public/en/index.html`) and the login page (`public/login.html`, `public/en/login.html`). Stylesheets: `core/core-landing.css`, `core/core-login.css`. Scripts: `core/core-landing.js`, `core/core-login.js`. Step 6 also restyled a third page, the free "Pro for a day" offer; it has since been removed (16.8).
 
 ### 16.1 Material: real glass, panes and plates
 
 - Every surface carries the system's glass classes in the markup (`core-glass core-glass--far|mid|near`), so it gets the lit edge that faces the Core, the fallbacks and the no-nested-blur rule from `core-base.css`. Page stylesheets do not paint their own glass.
-- Depth by role. Header: near glass (`data-core-at="top"`). Section panes, the hero copy panel, the hero facts panel and the footer: far glass. The demo frame, the closing card, the login plate and the trial plate: mid glass.
+- Depth by role. Header: near glass (`data-core-at="top"`). Section panes, the hero copy panel, the hero facts panel and the footer: far glass. The demo frame, the closing card and the login plate: mid glass.
 - A long page is built from **panes and plates**. Each section's `.wrap` is one far-glass pane (`.pane`). Cards inside it (`.feat`, `.tier`, `.faq-item`, `.rv-card`, `.offer-strip`, `.team-strip`) are plates: `--core-fill-1` with a 1 px inset line, no blur. This is the step 5 plans-window pattern, and it means one blurred surface per section instead of one per card.
 - **All text sits on glass.** No text is placed straight on the scene (rule 5). The headline has its own far panel (`.hero-copy`); section headings sit inside their pane.
 - On phones (up to 720 px) the far panes, the header and the footer are opaque (`--_backdrop: none; --_fill: var(--core-solid-far)`), and the demo frame and closing card use `--core-solid-mid`. A large blurred surface over a moving Core is too expensive there. The Core shows above the first screen, in the gaps between sections and above the closing plate.
@@ -1154,7 +1154,7 @@ Three pages a visitor sees before the product: the landing (`public/index.html`,
 - The scene is not in the first paint. Each page script appends `core-scene.js` after the window `load` event, in idle time (1.5 s limit). Text, buttons and the demo are visible first.
 - Blur starts with the scene. Until the scene script has loaded, glass has only a flat background behind it, so `html:not(.core-live) .core-glass` has no `backdrop-filter`; the page script adds `core-live` to `<html>` when the scene is in. The first paint does not pay for blur, and the look is the same.
 - Nothing shifts when the Core or late data arrive. Late content has its space reserved: the hero offer line keeps its height while hidden (`.hero-offer[hidden]`). The only shifts measured come from the web font swapping in during the first 0.4 s.
-- Font preloads match the language: Russian pages preload the Cyrillic Onest subset, English pages the Latin one. The trial page also preloads Latin Onest and Latin JetBrains Mono (the headline starts with "Pro", the timer is digits).
+- Font preloads match the language: Russian pages preload the Cyrillic Onest subset, English pages the Latin one.
 - `theme-color` is the scene colour, as in the chat (`#0B0A08` dark, `#F1ECE3` light).
 - Without scripts the landing shows the headline, lead, buttons, feature cards, pricing, FAQ (`<details>`) and footer. Pricing plates are built by script from `/api/plans`, so for a page without scripts the server puts a short copy of them into `<noscript>` inside `#tiers`: name, description, the price for one term, three limits and the button (`seo.plansTag`, called from `seo.landing`; 16.9). `.tiers > noscript { display: contents }` lets the grid lay out the plates themselves. With scripts on the copy is never parsed or shown, and the script replaces it. The period switch, offers and the model lists need scripts.
 - Without WebGL the scene falls back to its CSS glow; the pages are otherwise unchanged.
@@ -1207,9 +1207,9 @@ The landing's `.tier` plates follow the step 5 `.plan` rules: plan name in the m
 - **Success flight.** `premierFly(done)` moves the Core toward the viewer for about 420 ms while the plates fade, then calls `done`, which opens the chat. A 900 ms timer calls `done` regardless. With reduced motion, or without the scene, `done` runs at once. The page calls it after a correct second-factor code.
 - **Flight after Google or GitHub (off by default).** These sign-ins end in a server redirect, so the flight needs one more page. With `LOGIN_FLIGHT=on` the server redirects to `/login?in=1` instead of `/chat` and writes `window.IN=true` next to `window.REG`. The plate then says "Signed in · Opening the chat…", `core-login.js` loads the scene at once, waits for the Core to be drawn (`core:scene`, `ready`), holds 120 ms, flies and opens the chat. The chat opens without a flight if motion is reduced, the device is remembered as slow (`core-q` is `still`), there is no WebGL, or the Core is not drawn within 700 ms of the page starting to load. The response also carries `Refresh: 2; url=/chat` in case the script never runs. `/login?in=1` shows this state only to a signed-in visitor and only with the setting on; otherwise it behaves as `/login`. It is off by default because it makes every such sign-in longer: about 0.8 s on a machine with a GPU (an estimate, not measured), and 1–2.4 s with no flight shown where WebGL is rendered in software (measured in a sandbox without a GPU), because the scene start cannot be interrupted.
 
-### 16.8 Trial
+### 16.8 The free "Pro for a day" page (removed)
 
-A close-up of the pricing section: one mid-glass plate with the headline, the 24-hour countdown (the one number, machine voice, tabular digits; brighter while it runs) and the one amber action. The Core stands directly behind the plate and does not move. Features, comparison, steps and FAQ follow as far panes with plates. States kept: eligible, active (countdown, "open chat"), used (paid trial offer, glass button), already on a plan, not eligible, offer ended, and the status message (`.pt-status.ok` / `.err`).
+The page at `/protrial.html` and `/en/protrial.html` offered Pro for 24 hours for free. It was removed together with its stylesheet and script (`core/core-trial.css`, `core/core-trial.js`), the old `protrial.css`, its share image and its unused panel view. The server had no endpoints behind it (`/api/protrial/…` answered 404), so the offer could not be claimed. Both addresses now redirect to the pricing section of the landing; the rule in `server.js` runs before static files are served, so a file left on the server by an update unpacked over the project is not shown. The paid trial offers in the pricing section (16.5) are a different feature and are unchanged.
 
 ### 16.9 Server contract (do not break)
 
@@ -1220,7 +1220,7 @@ A close-up of the pricing section: one mid-glass plate with the headline, the 24
 
 ### 16.10 English pages
 
-`scripts/build-i18n.py` cannot be used: its catalogue is incomplete, and the generated English landing contains Russian text (for example the `<title>`). It also does not cover `protrial.html`. The English pages are edited by hand with the same structure as the Russian ones. Repairing the catalogue is separate work.
+`scripts/build-i18n.py` cannot be used: its catalogue is incomplete, and the generated English landing contains Russian text (for example the `<title>`). The English pages are edited by hand with the same structure as the Russian ones. Repairing the catalogue is separate work.
 
 ### 16.11 Checking a page like these
 
@@ -1240,7 +1240,7 @@ Step 7 is the developer cabinet, the admin panel and the status page. This secti
 `public/status.html` (served at `/status`, which redirects here). It is Russian only; there is no English page for it.
 
 - Loads only Core files: `core-tokens.css`, `core-base.css`, `core-components.css`, `core-scene.css`, `core-status.css`, and `core-ui.js` for tooltips. The Onest font is served from `/fonts`. Nothing is loaded from another domain (the earlier Google Fonts link was removed).
-- The Core sits in the upper right, quiet (gain below the trial page's), placed by `core-status.js` after the window `load` event in idle time. It does not move.
+- The Core sits in the upper right, quiet (gain 0.8, on narrow screens 0.7), placed by `core-status.js` after the window `load` event in idle time. It does not move.
 - Outage segments in the 24-hour bars are keyboard-focusable (`tabindex="0"`) and show their reason as a Core tooltip (`data-core-tip`) on hover and focus. Native `title` tooltips are gone.
 - On coarse pointers each outage segment gets an invisible 44 px hit area, so the bars keep their size.
 - Status colour (`--core-ok`, `--core-bad`) appears only where it means status. A model without data uses the neutral dot.

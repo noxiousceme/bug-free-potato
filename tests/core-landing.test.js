@@ -44,6 +44,23 @@ test('тарифы без скриптов: текст экранируется,
   for (const page of ['public/index.html', 'public/en/index.html']) assert.match(read(page), /<div class="tiers rv" id="tiers">\s*<\/div>/, page + ': место под тарифы');
 });
 
+test('страница «Pro на день — бесплатно» удалена: старые адреса ведут к тарифам, даже если файл остался на диске', async (t) => {
+  for (const f of ['public/protrial.html', 'public/en/protrial.html', 'public/protrial.css', 'public/core/core-trial.css', 'public/core/core-trial.js', 'public/og-protrial.png', 'public/admin/v-protrial.js'])
+    assert.ok(!fs.existsSync(path.join(root, f)), f + ' удалён');
+  const dir = copyApp(); seed(dir);
+  // обновление распаковывается поверх проекта: старый файл мог остаться на сервере
+  fs.writeFileSync(path.join(dir, 'public/protrial.html'), '<title>Pro на день — бесплатно</title>');
+  fs.writeFileSync(path.join(dir, 'public/en/protrial.html'), '<title>Free Pro Day</title>');
+  const s = await startServer(dir);
+  t.after(async () => { await s.stop(); rm(dir); });
+  for (const [url, to] of [['/protrial.html', '/#pricing'], ['/en/protrial.html', '/?lang=en#pricing'], ['/protrial.html?utm_source=x', '/#pricing']]) {
+    const r = await s.req('GET', url);
+    assert.equal(r.status, 301, url); assert.equal(r.headers.get('location'), to, url); assert.ok(!r.text.includes('Pro'), url + ': старая страница не отдаётся');
+  }
+  for (const page of ['public/index.html', 'public/en/index.html']) assert.match(read(page), /<section id="pricing"/, page + ': раздел тарифов, куда ведёт переадресация');
+  for (const url of ['/api/protrial/status', '/api/protrial/claim']) assert.equal((await s.req(url.endsWith('claim') ? 'POST' : 'GET', url, { token: 'tok1' })).status, 404, url);
+});
+
 test('LOGIN_FLIGHT=on: /login?in=1 отдаётся вошедшему с признаком и запасным переходом; по умолчанию — сразу чат', async (t) => {
   const dir = copyApp(), dir2 = copyApp(); seed(dir); seed(dir2);
   const s = await startServer(dir, { LOGIN_FLIGHT: 'on' }), off = await startServer(dir2);

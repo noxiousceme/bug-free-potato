@@ -2240,6 +2240,9 @@ if (/^\/chat\/?$/.test(url.pathname) || /^\/login\/?$/.test(url.pathname)) {
     return res.end(withMetrika(seo.landing(fs.readFileSync(htmlPath(PUBLIC_DIR, 'index.html', req), 'utf8'), lang, originOf(req), plans)));
   }
   if (url.pathname === '/en' || url.pathname === '/en/' || url.pathname === '/en/index.html') { res.writeHead(301, { Location: '/?lang=en', 'Cache-Control': 'no-store' }); return res.end(); }
+  // страница «Pro на день — бесплатно» удалена: старые ссылки ведут к тарифам. Правило стоит до раздачи файлов,
+  // потому что обновление распаковывается поверх проекта и удалённые файлы могут остаться на диске
+  if (url.pathname === '/protrial.html' || url.pathname === '/en/protrial.html') { res.writeHead(301, { Location: url.pathname.startsWith('/en/') ? '/?lang=en#pricing' : '/#pricing', 'Cache-Control': 'no-store' }); return res.end(); }
   if (/^\/en\/(?:chat|login|developers)\.html$/.test(url.pathname)) {
     res.writeHead(302, { Location:'/' + path.basename(url.pathname,'.html') + '?lang=en', 'Cache-Control':'no-store' }); return res.end();
   }
