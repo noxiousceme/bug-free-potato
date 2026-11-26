@@ -72,6 +72,19 @@ test('без ключей GitHub кнопка выключена', async (t) => 
   assert.equal((await s.req('GET', '/api/auth/github')).headers.get('location'), '/login?err=github_off');
 });
 
+test('LOGIN_FLIGHT=on: после входа — страница входа с признаком «вход выполнен», чат открывает она', async (t) => {
+  const gh = await mockGithub();
+  const dir = copyApp(); seed(dir);
+  const s = await startServer(dir, { GITHUB_CLIENT_ID: 'gh-id', GITHUB_CLIENT_SECRET: 'gh-secret', GITHUB_OAUTH_URL: gh.url, GITHUB_API_URL: gh.url, LOGIN_FLIGHT: 'on' });
+  t.after(async () => { await s.stop(); gh.close(); rm(dir); });
+  const a = await s.req('GET', '/api/auth/github'), loc = new URL(a.headers.get('location'));
+  const cb = await s.req('GET', `/api/auth/github/callback?code=new&state=${loc.searchParams.get('state')}`, { headers: { Cookie: 'gh_state=' + a.headers.get('set-cookie').match(/gh_state=([^;]+)/)[1] } });
+  assert.equal(cb.status, 302); assert.equal(cb.headers.get('location'), '/login?in=1');
+  const token = cb.headers.get('set-cookie').match(/premier_session=([a-f0-9]+)/)[1];
+  const page = await s.req('GET', '/login?in=1', { token });
+  assert.equal(page.status, 200); assert.match(page.text, /window\.IN=true/); assert.equal(page.headers.get('refresh'), '2; url=/chat');
+});
+
 test('старая база получает колонку github', async (t) => {
   const dir = copyApp(); t.after(() => rm(dir));
   const { DatabaseSync } = require('node:sqlite');

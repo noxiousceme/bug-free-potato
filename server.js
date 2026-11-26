@@ -267,6 +267,9 @@ function startSession(req, res, u) {
 }
 /* ---------- конец входа через Google/GitHub: с включённой 2FA сначала код на /login?step=2fa ---------- */
 const TFA_COOKIE = 'premier_2fa';
+// LOGIN_FLIGHT=on — после входа без кода в чат ведёт страница входа: на ней виден короткий полёт Ядра, как после кода 2FA
+// (core-login.js). Вход становится дольше примерно на 0,8 с, поэтому по умолчанию выключено: сервер ведёт сразу в чат.
+const LOGIN_FLIGHT = process.env.LOGIN_FLIGHT === 'on';
 function finishLogin(req, res, u, clear) {
   if (twofa.isOn(u.id)) {
     const t = twofa.ticket(u.id);
@@ -276,7 +279,7 @@ function finishLogin(req, res, u, clear) {
     return res.end();
   }
   startSession(req, res, u);
-  res.writeHead(302, { Location: '/chat', 'Set-Cookie': [res.getHeader('Set-Cookie'), clear] }); return res.end();
+  res.writeHead(302, { Location: LOGIN_FLIGHT ? '/login?in=1' : '/chat', 'Set-Cookie': [res.getHeader('Set-Cookie'), clear] }); return res.end();
 }
 /* ---------- вход через Google (OAuth 2.0) ---------- */
 const G_ID = process.env.GOOGLE_CLIENT_ID || '', G_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -342,7 +345,7 @@ function limited(ip, max, win) { const now = Date.now(); const h = (authHits.get
 const hit = (ip) => authHits.get(ip)?.push(Date.now()) ?? authHits.set(ip, [Date.now()]);
 setInterval(() => { const old = Date.now() - 864e5; for (const [k, h] of authHits) if (!h.length || h[h.length - 1] < old) authHits.delete(k); }, 600000).unref(); // счётчики не копятся бесконечно
 
-const { languageOf, languageHeaders, htmlPath, localizeResponse } = require('./language');
+const { languageOf, languageHeaders, htmlPath, localizeResponse, phrase } = require('./language');
 // у каждой модели постоянный ID для API (slug), назначается автоматически по названию
 const loadModels = () => { const models = store.kv.get('models', []); if (ensureSlugs(models)) store.kv.set('models', models); return models; };
 const saveModels = (models) => { ensureSlugs(models); store.kv.set('models', models); };
@@ -2215,12 +2218,15 @@ const httpServer = http.createServer(async (req, res) => {
 if (/^\/chat\/?$/.test(url.pathname) || /^\/login\/?$/.test(url.pathname)) {
     const u = currentUser(req), isChat = url.pathname.startsWith('/chat');
     if (isChat && !u) { res.writeHead(302, { Location: '/login' }); return res.end(); }
-    if (!isChat && u) { res.writeHead(302, { Location: '/chat' }); return res.end(); }
+    const arrived = LOGIN_FLIGHT && !isChat && !!u && url.searchParams.get('in') === '1'; // только что вошёл через Google/GitHub: полёт, затем чат
+    if (!isChat && u && !arrived) { res.writeHead(302, { Location: '/chat' }); return res.end(); }
+    // страница сама открывает чат после полёта; заголовок — запасной путь, если скрипт не выполнился
+    if (arrived) res.setHeader('Refresh', '2; url=/chat');
     languageHeaders(req, res);
-    if (!isChat) funnel.touch(req, res, url, isHttps(req)); // источник первого визита (UTM, Referer)
+    if (!isChat && !arrived) funnel.touch(req, res, url, isHttps(req)); // источник первого визита (UTM, Referer); возврат от поставщика входа — не визит
     let html = withMetrika(fs.readFileSync(htmlPath(PUBLIC_DIR, isChat ? 'chat.html' : 'login.html', req), 'utf8'));
     if (isChat) html = html.replace('<!--ME-->', `<script>window.ME=${JSON.stringify(publicUser(u)).replace(/</g, '\\u003c')}</script>`);
-    else html = html.replace('<!--REG-->', `<script>window.REG=${regOpen()};window.GOOGLE=${googleOn()};window.GITHUB=${githubOn()}</script>`);
+    else html = html.replace('<!--REG-->', `<script>window.REG=${regOpen()};window.GOOGLE=${googleOn()};window.GITHUB=${githubOn()}${arrived ? ';window.IN=true' : ''}</script>`);
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(html);
   }
   if (['/', '/index.html', '/privacy.html'].includes(url.pathname)) {
@@ -2229,9 +2235,14 @@ if (/^\/chat\/?$/.test(url.pathname) || /^\/login\/?$/.test(url.pathname)) {
     res.writeHead(200, { 'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-store' });
     if (url.pathname === '/privacy.html') return res.end(fs.readFileSync(htmlPath(PUBLIC_DIR, 'privacy.html', req)));
     // главная: заголовок, описание, canonical/hreflang, Open Graph, schema.org и FAQ собираются на сервере (seo.js)
-    return res.end(withMetrika(seo.landing(fs.readFileSync(htmlPath(PUBLIC_DIR, 'index.html', req), 'utf8'), lang, originOf(req), bill.publicPlans())));
+    // описания тарифов на английской странице — из того же каталога, что и в /api/plans
+    const plans = bill.publicPlans().map((p) => (lang === 'en' ? { ...p, desc: phrase(p.desc) } : p));
+    return res.end(withMetrika(seo.landing(fs.readFileSync(htmlPath(PUBLIC_DIR, 'index.html', req), 'utf8'), lang, originOf(req), plans)));
   }
   if (url.pathname === '/en' || url.pathname === '/en/' || url.pathname === '/en/index.html') { res.writeHead(301, { Location: '/?lang=en', 'Cache-Control': 'no-store' }); return res.end(); }
+  // страница «Pro на день — бесплатно» удалена: старые ссылки ведут к тарифам. Правило стоит до раздачи файлов,
+  // потому что обновление распаковывается поверх проекта и удалённые файлы могут остаться на диске
+  if (url.pathname === '/protrial.html' || url.pathname === '/en/protrial.html') { res.writeHead(301, { Location: url.pathname.startsWith('/en/') ? '/?lang=en#pricing' : '/#pricing', 'Cache-Control': 'no-store' }); return res.end(); }
   if (/^\/en\/(?:chat|login|developers)\.html$/.test(url.pathname)) {
     res.writeHead(302, { Location:'/' + path.basename(url.pathname,'.html') + '?lang=en', 'Cache-Control':'no-store' }); return res.end();
   }

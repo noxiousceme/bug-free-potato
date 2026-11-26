@@ -41,4 +41,4 @@ function localizeResponse(req, data) {
   if (['/api/plans','/api/billing'].includes(pathname) && Array.isArray(out.plans)) out.plans = out.plans.map(p => ({ ...p, desc: translated(p.desc) }));
   return out;
 }
-module.exports = { languageOf, languageHeaders, htmlPath, localizeResponse };
+module.exports = { languageOf, languageHeaders, htmlPath, localizeResponse, phrase: translated };

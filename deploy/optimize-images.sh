@@ -4,7 +4,7 @@
 # pngquant — с минимальной потерей качества (в 3–5 раз меньше), optipng/oxipng — без потерь (на 10–30%).
 set -e
 cd "$(dirname "$0")/../public"
-FILES="icon-p-2.png icon-p.png og.png og-en.png og-protrial.png icons/icon-512.png icons/maskable-512.png icons/icon-192.png icons/apple-touch-icon.png icons/badge-96.png"
+FILES="icon-p-2.png icon-p.png og.png og-en.png icons/icon-512.png icons/maskable-512.png icons/icon-192.png icons/apple-touch-icon.png icons/badge-96.png"
 for f in $FILES; do
   [ -f "$f" ] || continue
   before=$(wc -c <"$f")

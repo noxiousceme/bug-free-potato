@@ -32,13 +32,32 @@ function faqTag(html) {
   const items = faqItems(html); if (!items.length) return '';
   return `\n<script type="application/ld+json">${ldJson({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: items.map((x) => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })) })}</script>`;
 }
-// подставить в index.html: <title>, <meta name="description"> и теги вместо <!--SEO-->
+// тарифы без скриптов: плиты строит скрипт страницы из /api/plans, поэтому в <noscript> кладётся их короткая
+// серверная копия (название, цена за один срок, три лимита, кнопка). Со скриптами она не разбирается и не видна.
+const ruWord = (n, a, b, c) => n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c;
+function plansTag(lang, plans = []) {
+  const en = lang === 'en', list = (plans || []).filter((p) => p && p.name), num = (n) => Number(n).toLocaleString(en ? 'en-US' : 'ru-RU');
+  const lim = (n, ru, enWord, ruNone, enNone, ruTail) => en ? (n == null ? enNone : `${num(n)} ${enWord[n === 1 ? 0 : 1]} per day`) : (n == null ? ruNone : `${num(n)} ${ruWord(n, ...ru)}${ruTail}`);
+  const tier = (p) => {
+    const hot = p.tier === 1, paid = Number(p.price) > 0;
+    const rows = [lim(p.msgs, ['сообщение', 'сообщения', 'сообщений'], ['message', 'messages'], 'Сообщения без ограничений', 'Unlimited messages', ' в день'),
+      lim(p.code, ['запуск', 'запуска', 'запусков'], ['Python run', 'Python runs'], 'Python без ограничений', 'Unlimited Python', ' Python в день'),
+      lim(p.sites, ['сайт', 'сайта', 'сайтов'], ['website', 'websites'], 'Сайты без ограничений', 'Unlimited websites', ' в день')];
+    return `<div class="tier${hot ? ' hot' : ''}">${hot ? `<span class="tag">${en ? 'Popular' : 'Популярный'}</span>` : ''}<div><h3>${esc(p.name)}</h3><p class="d">${esc(p.desc || '')}</p></div>`
+      + `<div class="pr2">${paid ? num(p.price) : '0'} ₽ <small>${paid ? `/ ${num(p.days)} ${en ? 'days' : 'дней'}` : en ? 'forever' : 'навсегда'}</small></div>`
+      + `<ul>${rows.map((x) => `<li><svg><use href="#i-check"/></svg><span>${esc(x)}</span></li>`).join('')}</ul>`
+      + `<a href="/chat" class="btn ${hot ? 'pri' : 'ghost'}">${paid ? (en ? 'Choose ' : 'Выбрать ') + esc(p.name) : en ? 'Start for free' : 'Начать бесплатно'}</a></div>`;
+  };
+  return `<div class="tiers rv${list.length >= 4 ? ' n4' : ''}" id="tiers">${list.length ? `<noscript>${list.map(tier).join('')}</noscript>` : ''}</div>`;
+}
+// подставить в index.html: <title>, <meta name="description">, теги вместо <!--SEO--> и тарифы для страницы без скриптов
 function landing(html, lang, origin, plans) {
   const t = growth.texts(lang);
   return String(html)
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(t.seoTitle)}</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(t.seoDescription)}">`)
-    .replace('<!--SEO-->', headTags(lang, origin, plans) + faqTag(html));
+    .replace('<!--SEO-->', headTags(lang, origin, plans) + faqTag(html))
+    .replace(/<div class="tiers rv" id="tiers">\s*<\/div>/, () => plansTag(lang, plans));
 }
 // адрес панели управления сюда не пишем, чтобы не раскрывать его: она и так отдаётся с X-Robots-Tag: noindex
 function robots(origin) {
@@ -53,4 +72,4 @@ function sitemap(origin, lastmod, extra = []) {
     ...extra.map((e) => `  <url><loc>${esc(e.loc)}</loc><lastmod>${new Date(e.lastmod || lastmod || Date.now()).toISOString().slice(0, 10)}</lastmod>${(e.alt || []).map(([hl, href]) => `<xhtml:link rel="alternate" hreflang="${hl}" href="${esc(href)}"/>`).join('')}<priority>${e.prio || '0.5'}</priority></url>`),
     '</urlset>', ''].join('\n');
 }
-module.exports = { headTags, landing, robots, sitemap, faqItems };
+module.exports = { headTags, landing, plansTag, robots, sitemap, faqItems };
