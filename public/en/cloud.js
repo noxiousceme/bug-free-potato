@@ -95,7 +95,9 @@ async function clXterm() {
     } catch { CLX.failed = true; return clTab('term'); } // без xterm — построчный режим
     CLX.el = document.createElement('div'); CLX.el.className = 'clxt'; slot.appendChild(CLX.el);
     try { await document.fonts.load('13px "JetBrains Mono"'); } catch {} // the machine-voice font must be loaded before the terminal measures a cell
-    const t = CLX.term = new Terminal({ cursorBlink: true, fontSize: 13, lineHeight: 1.3, fontFamily: clFont(), scrollback: 5000, theme: clTheme() });
+    // links in terminal output: without its own handler xterm asks with the browser's confirm box
+    const linkHandler = { activate: async (e, uri) => { if (!(await CoreUI.confirm({ text: `Open the link ${uri}?\nLinks from command output may be unsafe.`, ok: 'Open' }))) return; const w = window.open(); if (w) { try { w.opener = null; } catch {} w.location.href = uri; } } };
+    const t = CLX.term = new Terminal({ cursorBlink: true, fontSize: 13, lineHeight: 1.3, fontFamily: clFont(), scrollback: 5000, theme: clTheme(), linkHandler });
     CLX.fit = new FitAddon.FitAddon(); t.loadAddon(CLX.fit); t.open(CLX.el);
     t.onData((d) => { if (CLX.ws?.readyState === 1) CLX.ws.send(JSON.stringify({ d })); else if (!CLX.ws && d === '\r') clXtConnect(); });
     t.onResize(({ cols, rows }) => { if (CLX.ws?.readyState === 1) CLX.ws.send(JSON.stringify({ r: [cols, rows] })); });

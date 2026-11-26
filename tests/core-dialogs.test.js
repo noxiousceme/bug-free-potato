@@ -82,9 +82,11 @@ test('шаг 5: в скриптах чата нет системных окон 
     if (/\/core\/core-ui\.js$/.test(f)) continue;   // сама капсула: её методы так и называются
     code(read(f)).split('\n').forEach((l) => { const rest = l.replace(/CoreUI\.(confirm|prompt|alert)\s*\(/g, ''); if (NATIVE.test(rest)) left.push(f); });
   }
-  // единственный оставленный вызов: запасной alert в language.js для страниц, где ещё нет ни toast, ни CoreUI (вход, лендинг)
-  assert.deepEqual(left, ['public/language.js'], 'системные окна: ' + left.join(', '));
-  assert.match(read('public/language.js'), /typeof window\.toast === 'function'\) window\.toast\(message\); else if \(window\.CoreUI\) window\.CoreUI\.alert\(message\); else alert\(message\)/);
+  // шаг 7: системных окон не осталось и в language.js — на страницах без toast и без CoreUI (вход, лендинг) сообщение
+  // выводится строкой на самой странице
+  assert.deepEqual(left, [], 'системные окна: ' + left.join(', '));
+  assert.match(read('public/language.js'), /typeof window\.toast === 'function'\) window\.toast\(message\); else if \(window\.CoreUI\) window\.CoreUI\.alert\(message\); else note\(message\)/);
+  assert.match(read('public/language.js'), /function note\(message\) \{[\s\S]*?setAttribute\('role', 'alert'\)/, 'запасное сообщение читается экранным диктором');
   // вызовы ждут ответа: await или .then, иначе «нет» ничего бы не отменяло
   let n = 0;
   for (const f of chatScripts()) {
