@@ -7,47 +7,88 @@
 <link rel="icon" type="image/png" href="/icon-p-2.png">
 <meta name="theme-color" content="#F1ECE3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0A08" media="(prefers-color-scheme: dark)">
 <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"><link rel="stylesheet" href="/core/core-status.css?v=1">
+<link rel="stylesheet" href="/core/core-tokens.css?v=2"><link rel="stylesheet" href="/core/core-base.css?v=1"><link rel="stylesheet" href="/core/core-components.css?v=2"><link rel="stylesheet" href="/core/core-scene.css?v=2"><link rel="stylesheet" href="/core/core-tools.css?v=1"><link rel="stylesheet" href="/core/core-status.css?v=2">
 </head>
 <body>
 <div class="core-scene" aria-hidden="true"></div>
-<header><div class="wrap"><a class="brand" href="/"><span class="mark"><img src="/icon-p-2.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></span>Premier</a><span class="sp"></span><a href="/status">Модели</a><a href="/">На главную</a></div></header>
+<header class="core-glass core-glass--far core-glass--work" data-core-at="top"><div class="wrap"><a class="brand" href="/"><span class="mark"><img src="/icon-p-2.png" alt="" width="24" height="24"></span>Premier</a><span class="sp"></span><a href="/status">Модели</a><a href="/">На главную</a></div></header>
 <main class="wrap">
+<section class="core-glass core-glass--far core-glass--work core-pane board">
+<div class="board-head">
 <h1>Статус моделей</h1>
 <div class="sub" id="upd">Загружаем…</div>
 <div class="sum" id="sum"></div>
-<div id="list"><div class="m">Загружаем…</div></div>
-<div class="note">Данные — фоновые тестовые запросы к каждой модели каждые 20 минут (пинг). Полоска — последние 24 часа: зелёный сегмент — модель отвечала, красный — были ошибки, серый — данных пока нет. Аптайм считается по пингам за 24 часа. Страница обновляется автоматически раз в минуту.</div>
+</div>
+<div id="list"><div class="m m-msg"><div class="core-gather" role="status" aria-busy="true" aria-label="Загружаем…"><span class="core-gather__line" style="--w:38%"></span><span class="core-gather__line"></span><span class="core-gather__line" style="--w:38%"></span><span class="core-gather__line"></span></div></div></div>
+<div class="note core-pane__foot">Данные — фоновые тестовые запросы к каждой модели каждые 20 минут (пинг). Полоска — последние 24 часа: зелёный сегмент — модель отвечала, красный — были ошибки, серый — данных пока нет. Аптайм считается по пингам за 24 часа. Страница обновляется автоматически раз в минуту.</div>
+</section>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
 const fmtT = (v) => v ? new Date(v).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' }) : '';
 const fmtMs = (v) => v == null ? '—' : v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '').replace('.', ',') + 'с' : v + 'мс';
 const esc2 = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// Состояние модели — по последнему пингу и по двум часам до него:
+//   ok    — отвечает, ошибок за два часа не было: мини-ядро горит ровно;
+//   flick — отвечает, но ошибки были, или не ответила сейчас, хотя недавно отвечала: мерцает;
+//   down  — не отвечает два часа и дольше: тёмное;
+//   na    — пингов ещё не было.
+// Свет никогда не единственный знак: рядом слово и метка своей формы (точка, треугольник, ромб, кольцо).
+const STATE = { ok: ['steady', 'ok', 'работает'], flick: ['flicker', 'warn', 'с перебоями'], down: ['dark', 'bad', 'недоступна'], na: ['dark', 'off', 'нет данных — первый пинг в течение 20 минут'] };
+function condOf(x) {
+  if (!x.probe) return 'na';
+  const tl = x.timeline || [], before = tl.slice(-5, -1), now = tl[tl.length - 1];
+  if (x.probe.ok) return now === 2 || before.includes(2) ? 'flick' : 'ok';
+  return now === 1 || before.includes(1) ? 'flick' : 'down';
+}
+// полоска за 24 часа: состояние читается и по высоте сегмента (отвечала — высокий, ошибки — низкий, данных нет — черта);
+// причина ошибки — в подсказке сегмента, она же его имя для экранного диктора
+function timeline(x) {
+  const now = Date.now(), incs = x.incidents || [];
+  return (x.timeline || []).map((v, i) => {
+    if (v !== 2) return '<i class="' + (v === 1 ? 'up' : '') + '"></i>';
+    const t0 = now - (47 - i) * 18e5, t1 = t0 + 18e5;
+    const hit = incs.find((z) => z.from <= t1 && (z.to == null || z.to >= t0));
+    const tip = esc2(fmtT(t0) + '–' + fmtT(t1) + (hit ? ' — ' + (hit.err || 'ошибка') : ' — ошибка'));
+    return '<i class="down" tabindex="0" role="img" aria-label="' + tip + '" data-core-tip="' + tip + '"></i>';
+  }).join('');
+}
+function parts(x) {
+  const c = condOf(x), ok = x.probe && x.probe.ok, s = STATE[c];
+  return { c, cond: s[0], tone: s[1],
+    word: c === 'flick' && ok ? 'работает ' + s[2] : s[2],
+    detail: !x.probe ? '' : ok ? '· пинг ' + fmtMs(x.probe.ms) + ' в ' + fmtT(x.probe.at) : 'ошибка: ' + (x.probe.err || '—'),
+    bad: !!x.probe && !ok,
+    up: x.up24h && x.up24h.n ? 'аптайм 24ч: <b>' + x.up24h.pct + '%</b>' : 'аптайм: накопление…',
+    tl: timeline(x), tlSig: (x.timeline || []).join('') };
+}
+function rowHTML(x, k) {
+  const p = parts(x), id = 'up' + k;
+  return '<div class="m" data-key="' + esc2(x.id || x.name) + '" data-cond="' + p.c + '"><div class="m-top"><span class="core-mini core-mini--lg" data-core-model="' + esc2(x.name) + '" data-core-cond="' + p.cond + '"></span><b>' + esc2(x.name) + '</b>'
+    + '<span class="core-state core-state--' + p.tone + ' m-state">' + p.word + '</span><span class="st' + (p.bad ? ' bad' : '') + '"' + (p.detail ? '' : ' hidden') + '>' + esc2(p.detail) + '</span>'
+    + '<span class="sp2"></span><span class="up" id="' + id + '">' + p.up + '</span></div>'
+    + '<div class="tl" role="group" aria-labelledby="' + id + '" data-sig="' + p.tlSig + '">' + p.tl + '</div><div class="tl-l"><span>−24ч</span><span>−12ч</span><span>сейчас</span></div></div>';
+}
+// обновление раз в минуту меняет строки на месте: мини-ядра не пересоздаются, фокус и подсказка на сегменте не пропадают
+function patch(el, x) {
+  const p = parts(x), q = (s) => el.querySelector(s);
+  el.dataset.cond = p.c;
+  q('.core-mini').setAttribute('data-core-cond', p.cond);
+  const st = q('.m-state'); st.className = 'core-state core-state--' + p.tone + ' m-state'; st.textContent = p.word;
+  const d = q('.st'); d.className = 'st' + (p.bad ? ' bad' : ''); d.textContent = p.detail; d.hidden = !p.detail;
+  q('.up').innerHTML = p.up;
+  const tl = q('.tl'); if (tl.dataset.sig !== p.tlSig) { tl.innerHTML = p.tl; tl.dataset.sig = p.tlSig; }
+}
 async function load() {
   let j;
   try { const r = await fetch('/api/models/status'); j = await r.json(); if (!Array.isArray(j)) throw new Error('x'); }
-  catch { $('list').innerHTML = '<div class="m">Не удалось загрузить статус моделей</div>'; return; }
+  catch { $('list').innerHTML = '<div class="m m-msg">Не удалось загрузить статус моделей</div>'; return; }
   $('upd').textContent = 'Обновлено в ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' }) + ' · пинг каждые 20 минут';
   const okN = j.filter((x) => x.probe && x.probe.ok).length;
-  $('sum').innerHTML = '<div class="chip"><span class="dot ' + (okN === j.length ? 'ok' : okN === 0 ? 'bad' : 'bad') + '"></span><b>' + okN + '</b> из ' + j.length + ' моделей работают' + (okN === j.length ? ' — всё в порядке' : ' — есть проблемы');
-  $('list').innerHTML = j.map((x) => {
-    const ok = x.probe && x.probe.ok;
-    const stTxt = x.probe ? (ok ? 'работает' : 'ошибка: ' + (x.probe.err || '—')) : 'нет данных — первый пинг в течение 20 минут';
-    const up = x.up24h && x.up24h.n ? 'аптайм 24ч: <b>' + x.up24h.pct + '%</b>' : 'аптайм: накопление…';
-    // причина ошибки показывается только при наведении на красный кубик
-    const now = Date.now();
-    const incs = x.incidents || [];
-    const tl = (x.timeline || []).map((v, i) => {
-      const cls = v === 1 ? 'up' : v === 2 ? 'down' : '';
-      if (v !== 2) return '<i class="' + cls + '"></i>';
-      const t0 = now - (47 - i) * 18e5, t1 = t0 + 18e5;
-      const hit = incs.find((z) => z.from <= t1 && (z.to == null || z.to >= t0));
-      const tip = fmtT(t0) + '–' + fmtT(t1) + (hit ? ' — ' + (hit.err || 'ошибка') : ' — ошибка');
-      return '<i class="' + cls + '" tabindex="0" data-core-tip="' + esc2(tip) + '"></i>';
-    }).join('');
-    return '<div class="m"><div class="m-top"><span class="dot ' + (x.probe ? (ok ? 'ok' : 'bad') : 'na') + '"></span><b>' + esc2(x.name) + '</b><span class="st ' + (x.probe && !ok ? 'bad' : '') + '">' + stTxt + '</span>' + (ok ? '<span class="st">· пинг ' + fmtMs(x.probe.ms) + ' в ' + fmtT(x.probe.at) + '</span>' : '') + '<span class="sp2"></span><span class="up">' + up + '</span></div><div class="tl">' + tl + '</div><div class="tl-l"><span>−24ч</span><span>−12ч</span><span>сейчас</span></div></div>';
-  }).join('');
+  $('sum').innerHTML = '<div class="chip"><span class="core-state core-state--' + (okN === j.length ? 'ok' : 'bad') + '" aria-hidden="true"></span><b>' + okN + '</b> из ' + j.length + ' моделей работают' + (okN === j.length ? ' — всё в порядке' : ' — есть проблемы') + '</div>';
+  const rows = [...$('list').querySelectorAll('.m[data-key]')];
+  if (rows.length === j.length && rows.every((el, i) => el.dataset.key === String(j[i].id || j[i].name))) rows.forEach((el, i) => patch(el, j[i]));
+  else $('list').innerHTML = j.map(rowHTML).join('');
 }
 load();
 setInterval(load, 60000);
