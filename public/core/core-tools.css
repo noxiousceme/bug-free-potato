@@ -1,0 +1,218 @@
+/* Premier · Core — рабочие экраны (редизайн, шаг 7): кабинет разработчика, панель управления, страница статуса.
+   Общий плотный слой: стекло для работы, панели, таблицы, формы настроек, показатели, графики, пустые состояния,
+   секреты и адреса, навигация по разделам. Подключается после core-components.css.
+   Описание: CORE-DESIGN-SYSTEM.md, раздел 18. Значения — только токены; размытие задаётся материалом, а не здесь. */
+
+/* ═══ 1. Плотное стекло ═══
+   work — плотнее и размыто слабее, чем в чате (размытие плотного стекла, 24 px вместо 36);
+   flat — почти непрозрачное и без размытия: большие таблицы над размытым фоном медленные и хуже читаются.
+   Заливки собраны из токенов стекла, поэтому запасные режимы (нет размытия, «уменьшить прозрачность») действуют и здесь. */
+:root{
+  --core-glass-work:var(--core-solid-far);--core-glass-work-mid:var(--core-solid-mid);--core-glass-flat:var(--core-solid-far);
+  --core-table-head:var(--core-solid-far);
+  /* графики рисуются цветами Ядра: от угля к белому калению; нулевой ряд — нейтральный */
+  --core-chart-1:var(--core-heat-3);--core-chart-2:var(--core-heat-4);--core-chart-3:var(--core-heat-2);--core-chart-4:var(--core-heat-5);--core-chart-0:var(--core-text-3);
+}
+@supports (color:color-mix(in srgb,red,blue)){:root{
+  --core-glass-work:color-mix(in srgb,var(--core-solid-far) 62%,var(--core-glass-far));
+  --core-glass-work-mid:color-mix(in srgb,var(--core-solid-mid) 62%,var(--core-glass-mid));
+  --core-glass-flat:color-mix(in srgb,var(--core-solid-far) 86%,var(--core-glass-far));
+}}
+.core-glass--work{--_fill:var(--core-glass-work);--_backdrop:var(--core-backdrop-dense)}
+.core-glass--work.core-glass--mid,.core-card.core-glass--work{--_fill:var(--core-glass-work-mid)}
+.core-glass--flat{--_fill:var(--core-glass-flat);--_backdrop:none}
+/* телефон: крупное стекло не размывается вовсе */
+@media (max-width:720px){.core-glass--work{--_fill:var(--core-glass-flat);--_backdrop:none}}
+/* плита внутри панели: заливка и тонкая грань, без размытия (как плиты тарифов) */
+.core-plate{min-width:0;border-radius:var(--core-r-md);background:var(--core-fill-1);box-shadow:inset 0 0 0 1px var(--core-line)}
+
+/* ═══ 2. Заголовок экрана и панель раздела ═══ */
+.core-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--core-s-2) var(--core-s-4);min-width:0}
+.core-head__title{margin:0;font:var(--core-human-4);font-weight:var(--core-w-3);letter-spacing:var(--core-track-4);color:var(--core-text)}
+.core-head__sub{flex:1 1 100%;max-width:72ch;margin:0;font:var(--core-human-2);color:var(--core-text-2)}
+.core-head__acts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2);margin-left:auto}
+
+.core-pane{display:flex;flex-direction:column;min-width:0}
+.core-pane__head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2) var(--core-s-3);min-height:var(--core-h-lg);padding:var(--core-s-2) var(--core-s-4);border-bottom:1px solid var(--core-line)}
+.core-pane__title{margin:0;font:var(--core-human-3);font-weight:var(--core-w-2);color:var(--core-text)}
+.core-pane__meta{font:var(--core-machine-1);font-variant-ligatures:none;color:var(--core-text-3)}
+.core-pane__acts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2);margin-left:auto}
+.core-pane__body{min-width:0;padding:var(--core-s-4)}
+.core-pane__body--flush{padding:0}
+.core-pane__foot{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2) var(--core-s-3);padding:var(--core-s-3) var(--core-s-4);border-top:1px solid var(--core-line)}
+.core-pane>.core-table-wrap:last-child{border-radius:0 0 var(--core-r-md) var(--core-r-md)}
+.core-pane>.core-table-wrap:first-child{border-radius:var(--core-r-md)}
+
+.core-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2);min-width:0}
+.core-toolbar__grow{flex:1 1 220px;min-width:0}
+.core-toolbar__sp{flex:1 1 0}
+.core-pane>.core-toolbar{padding:var(--core-s-3) var(--core-s-4);border-bottom:1px solid var(--core-line)}
+
+/* ═══ 3. Таблица для работы ═══
+   Обёртка прокручивается в обе стороны, шапка остаётся на месте, первый столбец можно закрепить.
+   Высота строки — 36 px, на сенсорных экранах — 44. */
+.core-table-wrap--work{overflow:auto;max-height:var(--core-table-max,none);overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.core-table-wrap--work:focus-visible{outline:2px solid var(--core-focus);outline-offset:-2px}
+.core-table--dense th{padding:var(--core-s-15) var(--core-s-3)}
+.core-table--dense td{height:var(--core-h-md);padding:var(--core-s-15) var(--core-s-3)}
+.core-table--sticky thead th{position:sticky;top:0;z-index:1;border-bottom:0;background:var(--core-table-head);box-shadow:inset 0 -1px 0 var(--core-line-2)}
+.core-table--pin :is(th,td):first-child{position:sticky;left:0;z-index:1;background:var(--core-table-head)}
+.core-table--pin thead th:first-child{z-index:2}
+@media (hover:hover){.core-table--pin tbody tr:hover td:first-child{background:linear-gradient(var(--core-fill-1),var(--core-fill-1)),var(--core-table-head)}}
+.core-table--pin tr:is([aria-selected=true],[aria-expanded=true]) td:first-child{background:linear-gradient(var(--core-fill-2),var(--core-fill-2)),var(--core-table-head)}
+.core-table tr[aria-expanded=true] td{background:var(--core-fill-2)}
+.core-table tr.core-click{cursor:var(--core-cursor-action)}
+.core-table tr:focus-visible{outline:2px solid var(--core-focus);outline-offset:-2px}
+/* раскрытая запись: строка во всю ширину под своей строкой */
+.core-table__detail>td{height:auto;padding:0;background:var(--core-well)}
+.core-table__detail:hover>td{background:var(--core-well)!important}
+.core-table__detailbox{padding:var(--core-s-4);min-width:0}
+/* сортировка: кнопка в заголовке, направление — стрелкой, а не цветом */
+.core-table__sort{display:inline-flex;align-items:center;gap:var(--core-s-1);margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:var(--core-cursor-action)}
+.core-table__sort::after{content:"↕";font:var(--core-machine-1);color:var(--core-text-3)}
+th[aria-sort=ascending] .core-table__sort{color:var(--core-text)}th[aria-sort=ascending] .core-table__sort::after{content:"↑";color:var(--core-text)}
+th[aria-sort=descending] .core-table__sort{color:var(--core-text)}th[aria-sort=descending] .core-table__sort::after{content:"↓";color:var(--core-text)}
+/* ячейки: обрезка длинного, машинный голос, действия */
+.core-table .core-cut{display:block;max-width:var(--w,28ch);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.core-table .core-mono{font:var(--core-machine-2);font-variant-ligatures:none;white-space:nowrap}
+.core-table .core-dim{color:var(--core-text-2)}
+.core-table .core-acts{width:1%;text-align:right;white-space:nowrap}
+.core-table .core-acts>*+*{margin-left:var(--core-s-1)}
+.core-table__empty td{height:auto;padding:var(--core-s-8) var(--core-s-4);color:var(--core-text-2);text-align:center}
+.core-table__empty:hover td{background:none!important}
+@media (pointer:coarse){.core-table--dense td{height:var(--core-hit)}}
+/* телефон: таблица-список. У ячеек подписи из data-label; шапка остаётся для экранного диктора */
+@media (max-width:600px){
+  .core-table--stack thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .core-table--stack,.core-table--stack tbody,.core-table--stack tr,.core-table--stack td{display:block;width:100%}
+  .core-table--stack tbody tr{padding:var(--core-s-2) var(--core-s-4);border-bottom:1px solid var(--core-line)}
+  .core-table--stack tbody tr:last-child{border-bottom:0}
+  .core-table--stack td{display:flex;align-items:baseline;justify-content:space-between;gap:var(--core-s-4);height:auto;min-height:var(--core-h-sm);padding:var(--core-s-1) 0;border:0;text-align:right}
+  .core-table--stack td[data-label]::before{content:attr(data-label);flex:none;max-width:45%;color:var(--core-text-3);font:var(--core-human-1);text-align:left;white-space:normal}
+  .core-table--stack td:not([data-label]){justify-content:flex-start;text-align:left}
+  .core-table--stack .core-acts{width:100%;justify-content:flex-end}
+  .core-table--stack .core-cut{max-width:100%}
+  .core-table--stack .core-table__detail{padding:0}
+}
+
+/* ═══ 4. Формы настроек ═══
+   Строка: подпись слева, поле справа; группы с подписью-заголовком; состояния строки и всей формы видны без цвета:
+   у «не сохранено», «сохранено» и «ошибка» разные метки и слова. */
+.core-form{display:grid;gap:var(--core-s-6);min-width:0}
+.core-form__group{min-width:0;margin:0;padding:0;border:0}
+.core-form__legend,.core-caps{display:block;margin:0;padding:0;font:var(--core-human-1);font-weight:var(--core-w-2);letter-spacing:var(--core-track-caps);text-transform:uppercase;color:var(--core-text-3)}
+.core-form__legend{width:100%;margin-bottom:var(--core-s-1)}
+.core-form__note{margin:0 0 var(--core-s-2);font:var(--core-human-1);color:var(--core-text-2)}
+.core-form__row{position:relative;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:center;gap:var(--core-s-1) var(--core-s-5);min-height:var(--core-h-lg);padding:var(--core-s-2) 0;border-top:1px solid var(--core-line)}
+.core-form__row--top{align-items:start}
+.core-form__row--wide{grid-template-columns:minmax(0,1fr)}
+.core-form__label{min-width:0;margin:0;font:var(--core-human-2);font-weight:var(--core-w-2);color:var(--core-text)}
+.core-form__hint{display:block;margin-top:var(--core-s-05);font:var(--core-human-1);font-weight:var(--core-w-1);color:var(--core-text-2)}
+.core-form__ctl{display:flex;flex-wrap:wrap;align-items:center;gap:var(--core-s-2);min-width:0}
+.core-form__ctl>:is(.core-input,.core-inputbox,select,textarea){flex:1 1 180px;min-width:0}
+.core-form__ctl--end{justify-content:flex-end}
+.core-form__error{grid-column:2;margin:0;font:var(--core-human-1);color:var(--core-bad)}
+.core-form__row--wide .core-form__error{grid-column:1}
+.core-form__row[data-state]::before{content:"";position:absolute;left:calc(var(--core-s-3) * -1);top:var(--core-s-3);bottom:var(--core-s-3);width:2px;border-radius:var(--core-r-full);background:var(--_st,transparent)}
+.core-form__row[data-state=dirty]{--_st:var(--core-on)}
+.core-form__row[data-state=saved]{--_st:var(--core-ok)}
+.core-form__row[data-state=error]{--_st:var(--core-bad)}
+.core-form__row[data-state=error] :is(.core-input,select,textarea){border-color:var(--core-bad)}
+.core-form__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:var(--core-s-2) var(--core-s-3);padding-top:var(--core-s-4);border-top:1px solid var(--core-line-2)}
+.core-form__foot>.core-state{margin-right:auto}
+@media (max-width:600px){
+  .core-form__row{grid-template-columns:minmax(0,1fr);align-items:start;padding:var(--core-s-3) 0}
+  .core-form__ctl--end{justify-content:flex-start}
+  .core-form__error{grid-column:1}
+}
+
+/* состояние словом и меткой: у каждого своя фигура, цвет — только подтверждение */
+.core-state{display:inline-flex;align-items:center;gap:var(--core-s-15);font:var(--core-machine-1);font-variant-ligatures:none;color:var(--core-text-2);white-space:nowrap}
+.core-state::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:currentColor}
+.core-state--ok,.core-state[data-state=saved],.core-state[data-state=ok]{color:var(--core-ok)}
+.core-state--warn,.core-state[data-state=warn]{color:var(--core-warn)}
+.core-state--warn::before,.core-state[data-state=warn]::before{width:8px;height:7px;border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.core-state--bad,.core-state[data-state=error],.core-state[data-state=bad]{color:var(--core-bad)}
+.core-state--bad::before,.core-state[data-state=error]::before,.core-state[data-state=bad]::before{border-radius:1px;transform:rotate(45deg)}
+.core-state--off,.core-state[data-state=off]{color:var(--core-text-3)}
+.core-state--off::before,.core-state[data-state=off]::before{background:none;box-shadow:inset 0 0 0 1.5px currentColor}
+.core-state[data-state=dirty]{color:var(--core-text)}
+.core-state[data-state=saving]::before{animation:core-state-wait var(--core-ambient) var(--core-ease-move) infinite}
+@keyframes core-state-wait{50%{opacity:.25}}
+
+/* ═══ 5. Показатели ═══ */
+.core-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:var(--core-s-3);min-width:0}
+.core-stat{display:grid;align-content:start;gap:var(--core-s-1);min-width:0;padding:var(--core-s-4)}
+.core-stat__label{font:var(--core-human-1);color:var(--core-text-2)}
+.core-stat__value{overflow:hidden;font:var(--core-machine-5);font-weight:var(--core-w-2);letter-spacing:var(--core-track-5);font-variant-numeric:tabular-nums;font-variant-ligatures:none;color:var(--core-text);text-overflow:ellipsis;white-space:nowrap}
+.core-stat__value--sm{font:var(--core-machine-4);font-weight:var(--core-w-2);letter-spacing:var(--core-track-4)}
+.core-stat__meta{font:var(--core-machine-1);font-variant-ligatures:none;color:var(--core-text-3)}
+.core-stat__meta--ok{color:var(--core-ok)}.core-stat__meta--warn{color:var(--core-warn)}.core-stat__meta--bad{color:var(--core-bad)}
+
+/* ═══ 6. Графики ═══
+   Столбцы на CSS (высота — доля --v от 0 до 1) и классы для SVG. Ряды различаются не только цветом: подписи обязательны. */
+.core-chart{display:grid;gap:var(--core-s-2);min-width:0}
+.core-chart__plot{position:relative;display:flex;align-items:flex-end;gap:var(--core-s-05);height:var(--core-chart-h,140px);border-bottom:1px solid var(--core-line-2);background:repeating-linear-gradient(to top,transparent 0,transparent calc(25% - 1px),var(--core-line) calc(25% - 1px),var(--core-line) 25%)}
+.core-chart__bar{flex:1 1 0;min-width:2px;height:calc(var(--v,0) * 100%);min-height:1px;border-radius:2px 2px 0 0;background:var(--core-chart-1);transition:height var(--core-dur-3) var(--core-ease-out)}
+.core-chart__bar--2{background:var(--core-chart-2)}.core-chart__bar--3{background:var(--core-chart-3)}.core-chart__bar--0{background:var(--core-chart-0)}
+.core-chart__bar:is(:hover,:focus-visible,[aria-current]){background:var(--core-chart-4)}
+.core-chart__axis{display:flex;justify-content:space-between;gap:var(--core-s-2);font:var(--core-machine-1);font-variant-ligatures:none;color:var(--core-text-3)}
+.core-chart__legend{display:flex;flex-wrap:wrap;gap:var(--core-s-1) var(--core-s-4);margin:0;padding:0;list-style:none;font:var(--core-human-1);color:var(--core-text-2)}
+.core-chart__key{display:inline-flex;align-items:center;gap:var(--core-s-15)}
+.core-chart__key::before{content:"";flex:none;width:10px;height:10px;border-radius:2px;background:var(--_c,var(--core-chart-1))}
+.core-chart__key--2{--_c:var(--core-chart-2)}.core-chart__key--3{--_c:var(--core-chart-3)}.core-chart__key--0{--_c:var(--core-chart-0)}
+.core-chart svg{display:block;width:100%;height:var(--core-chart-h,140px);overflow:visible}
+.core-chart__grid{stroke:var(--core-line);stroke-width:1;vector-effect:non-scaling-stroke}
+.core-chart__line{fill:none;stroke:var(--core-chart-1);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.core-chart__line--2{stroke:var(--core-chart-2);stroke-dasharray:4 3}.core-chart__line--0{stroke:var(--core-chart-0);stroke-dasharray:1 3}
+.core-chart__area{fill:var(--core-chart-1);fill-opacity:.14;stroke:none}
+.core-chart__dot{fill:var(--core-chart-4)}
+.core-chart__text{fill:var(--core-text-3);font:var(--core-machine-1)}
+
+/* ═══ 7. Пустое состояние ═══ остывшее мини-ядро, заголовок, строка, одно действие */
+.core-empty{display:grid;justify-items:center;gap:var(--core-s-2);padding:var(--core-s-10) var(--core-s-5);color:var(--core-text-2);font:var(--core-human-2);text-align:center}
+.core-empty--sm{padding:var(--core-s-6) var(--core-s-4)}
+.core-empty__title{margin:0;font:var(--core-human-3);font-weight:var(--core-w-2);color:var(--core-text)}
+.core-empty__text{max-width:46ch;margin:0}
+.core-empty>.core-mini{margin-bottom:var(--core-s-1)}
+.core-empty>.core-btn{margin-top:var(--core-s-2)}
+
+/* ═══ 8. Адреса и секреты ═══
+   Значение — машинным голосом в одну строку: не переносится (иначе ломается копирование), длинное прокручивается.
+   data-state: hidden — скрыто, shown — открыто; --once — единственный показ полного ключа. */
+.core-copy,.core-secret{display:flex;align-items:center;gap:var(--core-s-1);min-width:0;min-height:var(--core-h-md);padding:var(--core-s-05) var(--core-s-05) var(--core-s-05) var(--core-s-3);border-radius:var(--core-r-sm);background:var(--core-well);box-shadow:inset 0 0 0 1px var(--core-line)}
+.core-copy__label,.core-secret__label{flex:none;font:var(--core-human-1);color:var(--core-text-3)}
+.core-copy__value,.core-secret__value{flex:1 1 auto;min-width:0;margin:0;padding:0;overflow-x:auto;overflow-y:hidden;border:0;background:none;color:var(--core-text);font:var(--core-machine-2);font-variant-ligatures:none;white-space:nowrap;scrollbar-width:none;-webkit-user-select:all;user-select:all;cursor:var(--core-cursor-text)}
+.core-copy__value::-webkit-scrollbar,.core-secret__value::-webkit-scrollbar{display:none}
+.core-secret[data-state=hidden] .core-secret__value{color:var(--core-text-3);-webkit-user-select:none;user-select:none}
+.core-secret[data-state=shown]{box-shadow:inset 0 0 0 1px var(--core-line-2)}
+.core-secret--once{background:var(--core-warn-soft);box-shadow:inset 0 0 0 1px var(--core-warn)}
+.core-copy>.core-btn,.core-secret>.core-btn{flex:none}
+/* «скопировано» и «сохранено» на самой кнопке */
+.core-btn[data-done]{color:var(--core-ok)}
+
+/* ═══ 9. Навигация по разделам ═══ «включено» — светом, не цветом */
+.core-nav{display:grid;gap:var(--core-s-05);margin:0;padding:0;list-style:none}
+.core-nav__label{padding:var(--core-s-3) var(--core-s-3) var(--core-s-1);font:var(--core-human-1);font-weight:var(--core-w-2);letter-spacing:var(--core-track-caps);text-transform:uppercase;color:var(--core-text-3)}
+.core-nav__item{display:flex;align-items:center;gap:var(--core-s-2);width:100%;min-width:0;min-height:var(--core-h-md);margin:0;padding:0 var(--core-s-3);border:0;border-radius:var(--core-r-sm);background:none;color:var(--core-text-2);font:var(--core-human-2);font-weight:var(--core-w-2);text-align:left;text-decoration:none;white-space:nowrap;cursor:var(--core-cursor-action);transition:background-color var(--core-dur-1) linear,color var(--core-dur-1) linear}
+@media (hover:hover){.core-nav__item:hover{background:var(--core-fill-1);color:var(--core-text)}}
+.core-nav__item:is([aria-current]:not([aria-current=false]),[aria-selected=true]){background:var(--core-fill-2);color:var(--core-text)}
+.core-nav__item svg{flex:none;width:var(--core-icon);height:var(--core-icon)}
+.core-nav__count{margin-left:auto;font:var(--core-machine-1);color:var(--core-text-3)}
+.core-nav--bar{display:flex;gap:var(--core-s-1);overflow-x:auto;scrollbar-width:none}
+.core-nav--bar::-webkit-scrollbar{display:none}
+.core-nav--bar .core-nav__item{flex:none;width:auto}
+@media (max-width:600px),(pointer:coarse){.core-nav__item{min-height:var(--core-hit)}}
+
+/* ═══ 10. Мелочи ═══ пары «подпись — значение», строки журнала, постраничный переход */
+.core-kv{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);gap:var(--core-s-2) var(--core-s-5);margin:0;font:var(--core-human-2)}
+.core-kv dt{color:var(--core-text-2)}
+.core-kv dd{min-width:0;margin:0;color:var(--core-text);overflow-wrap:anywhere}
+.core-kv dd.core-num{font:var(--core-machine-2);font-variant-numeric:tabular-nums;font-variant-ligatures:none}
+@media (max-width:600px){.core-kv{grid-template-columns:minmax(0,1fr);gap:var(--core-s-05)}.core-kv dt:not(:first-child){margin-top:var(--core-s-2)}}
+.core-log{margin:0;padding:0;list-style:none;font:var(--core-machine-1);font-variant-ligatures:none;color:var(--core-text-2)}
+.core-log__line{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--core-s-3);padding:var(--core-s-15) var(--core-s-4);border-bottom:1px solid var(--core-line)}
+.core-log__line:last-child{border-bottom:0}
+.core-log__time{color:var(--core-text-3);white-space:nowrap}
+.core-log__text{min-width:0;overflow-wrap:anywhere;color:var(--core-text)}
+.core-pager{display:flex;align-items:center;gap:var(--core-s-2);font:var(--core-machine-1);font-variant-numeric:tabular-nums;color:var(--core-text-2)}
