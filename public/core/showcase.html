@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/core/core-base.css">
 <link rel="stylesheet" href="/core/core-components.css">
 <link rel="stylesheet" href="/core/core-scene.css">
+<link rel="stylesheet" href="/core/core-tools.css">
 <link rel="stylesheet" href="/core/showcase.css">
 <script>(function(){try{var q=new URLSearchParams(location.search),r=document.documentElement,t=q.get('theme');if(t==='dark'||t==='light')r.setAttribute('data-theme',t);if(q.get('motion')==='reduce')r.setAttribute('data-core-motion','reduce');if(q.get('transparency')==='reduce')r.setAttribute('data-core-transparency','reduce');['is','place','form','model','quality'].forEach(function(k){var v=q.get(k==='is'?'state':k);if(v)r.setAttribute('data-core-'+k,v)})}catch(e){}})();</script>
 <script defer src="/core/core-ui.js"></script>
@@ -77,6 +78,7 @@
   <a class="core-row core-row--action" href="#code"><span class="core-row__body"><span class="core-row__title">Блок кода</span></span><span class="core-row__trail">16</span></a>
   <a class="core-row core-row--action" href="#cursor"><span class="core-row__body"><span class="core-row__title">Курсор</span></span><span class="core-row__trail">17</span></a>
   <a class="core-row core-row--action" href="#details"><span class="core-row__body"><span class="core-row__title">Мелочи</span></span><span class="core-row__trail">18</span></a>
+  <a class="core-row core-row--action" href="#tools"><span class="core-row__body"><span class="core-row__title">Рабочие экраны</span></span><span class="core-row__trail">19</span></a>
 </nav>
 
 <main class="sc-main">
@@ -576,6 +578,69 @@ http.<span class="hljs-title">createServer</span>((req, res) =&gt; {
       </div>
       <label class="core-field sc-gap"><span class="core-field__label">Текст-подсказка и каретка</span><input class="core-input" type="text" placeholder="Подсказка — третий уровень текста; поставьте сюда курсор"></label>
     </div>
+  </div>
+</section>
+
+<!-- ══════════ 19 Рабочие экраны (шаг 7, core-tools.css) ══════════ -->
+<section class="sc-sec" id="tools">
+  <header class="sc-head core-glass core-glass--far"><span class="sc-no">19</span><h2 class="core-human-4">Рабочие экраны</h2><p class="core-text-2">Кабинет разработчика, панель управления, статус моделей. Стекло плотнее и размыто слабее, таблицы и формы одни на все экраны, графики — цветами Ядра.</p></header>
+  <div class="sc-tools">
+    <div class="core-head"><h3 class="core-head__title">Обзор</h3><div class="core-head__acts"><button type="button" class="core-btn core-btn--sm">Обновить</button></div><p class="core-head__sub">Заголовок экрана: название, одна строка и действия справа.</p></div>
+    <div class="core-stats">
+      <div class="core-glass core-glass--far core-glass--work core-stat"><span class="core-stat__label">Сообщений сегодня</span><span class="core-stat__value">12 480</span><span class="core-stat__meta core-stat__meta--ok">+8 % к вчера</span></div>
+      <div class="core-glass core-glass--far core-glass--work core-stat"><span class="core-stat__label">Выручка</span><span class="core-stat__value">38 610 ₽</span><span class="core-stat__meta">14 платежей</span></div>
+      <div class="core-glass core-glass--far core-glass--work core-stat"><span class="core-stat__label">Ошибки</span><span class="core-stat__value">3</span><span class="core-stat__meta core-stat__meta--bad">2 за час</span></div>
+      <div class="core-glass core-glass--far core-glass--work core-stat"><span class="core-stat__label">Память</span><span class="core-stat__value core-stat__value--sm">412 МБ</span><span class="core-state core-state--ok">работает</span></div>
+    </div>
+    <section class="core-glass core-glass--far core-glass--work core-pane" aria-label="Пример графика">
+      <div class="core-pane__head"><h3 class="core-pane__title">Сообщения за 10 дней</h3><span class="core-pane__meta">core-glass--work · core-chart</span></div>
+      <div class="core-pane__body"><div class="core-chart">
+        <div class="core-chart__plot" role="img" aria-label="Сообщения по дням, наибольшее значение девятого дня"><i class="core-chart__bar" style="--v:.3"></i><i class="core-chart__bar" style="--v:.45"></i><i class="core-chart__bar" style="--v:.4"></i><i class="core-chart__bar" style="--v:.62"></i><i class="core-chart__bar" style="--v:.58"></i><i class="core-chart__bar" style="--v:.8"></i><i class="core-chart__bar core-chart__bar--0" style="--v:.2"></i><i class="core-chart__bar" style="--v:.7"></i><i class="core-chart__bar" style="--v:.92"></i><i class="core-chart__bar" style="--v:.66" aria-current="true"></i></div>
+        <div class="core-chart__axis"><span>17.11</span><span>21.11</span><span>26.11</span></div>
+        <ul class="core-chart__legend"><li class="core-chart__key">Сообщения</li><li class="core-chart__key core-chart__key--0">Выходной</li></ul>
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none" style="--core-chart-h:72px" role="img" aria-label="Две линии: запросы и ошибки"><line class="core-chart__grid" x1="0" x2="100" y1="20" y2="20"/><path class="core-chart__area" d="M0 40 L0 30 L20 22 L40 26 L60 12 L80 16 L100 6 L100 40Z"/><path class="core-chart__line" d="M0 30 L20 22 L40 26 L60 12 L80 16 L100 6"/><path class="core-chart__line core-chart__line--2" d="M0 34 L20 30 L40 31 L60 24 L80 26 L100 20"/></svg>
+      </div></div>
+    </section>
+    <section class="core-glass core-glass--far core-glass--flat core-pane" aria-label="Пример таблицы">
+      <div class="core-pane__head"><h3 class="core-pane__title">Журнал запросов</h3><span class="core-tag core-tag--heat">идёт запись</span><span class="core-pane__meta">core-glass--flat · core-table--dense --sticky --pin --stack</span></div>
+      <div class="core-toolbar"><input class="core-input core-toolbar__grow" type="search" placeholder="Модель или ключ" aria-label="Поиск в журнале"><select class="core-input" aria-label="Статус"><option>Все статусы</option><option>Только ошибки</option></select><span class="core-toolbar__sp"></span><span class="core-pager">1–50 из 1 204</span></div>
+      <div class="core-table-wrap core-table-wrap--work" style="--core-table-max:268px" tabindex="0" role="region" aria-label="Журнал запросов">
+        <table class="core-table core-table--dense core-table--sticky core-table--pin core-table--stack">
+          <thead><tr><th>Время</th><th aria-sort="descending"><button type="button" class="core-table__sort">Модель</button></th><th>Ключ</th><th>Статус</th><th class="core-num">Токены</th><th class="core-num">Время, мс</th></tr></thead>
+          <tbody>
+            <tr class="core-click" tabindex="0" aria-expanded="true"><td class="core-mono" data-label="Время">12:04:11</td><td class="core-mono" data-label="Модель">claude-opus-4.5</td><td class="core-mono core-dim" data-label="Ключ">pk_…a81f</td><td data-label="Статус"><span class="core-state core-state--ok">200</span></td><td class="core-num" data-label="Токены">1 284</td><td class="core-num" data-label="Время, мс">842</td></tr>
+            <tr class="core-table__detail"><td colspan="6"><div class="core-table__detailbox"><dl class="core-kv"><dt>Адрес</dt><dd class="core-num">POST /v1/chat/completions</dd><dt>Клиент</dt><dd>Cursor</dd></dl></div></td></tr>
+            <tr class="core-click" tabindex="0"><td class="core-mono" data-label="Время">12:03:58</td><td class="core-mono" data-label="Модель">gpt-5</td><td class="core-mono core-dim" data-label="Ключ">pk_…a81f</td><td data-label="Статус"><span class="core-state core-state--warn">429</span></td><td class="core-num" data-label="Токены">0</td><td class="core-num" data-label="Время, мс">12</td></tr>
+            <tr class="core-click" tabindex="0"><td class="core-mono" data-label="Время">12:03:40</td><td class="core-mono" data-label="Модель">gemini-3-pro</td><td class="core-mono core-dim" data-label="Ключ">pk_…77c2</td><td data-label="Статус"><span class="core-state core-state--bad">502</span></td><td class="core-num" data-label="Токены">310</td><td class="core-num" data-label="Время, мс">30 004</td></tr>
+            <tr class="core-click" tabindex="0"><td class="core-mono" data-label="Время">12:02:10</td><td class="core-mono" data-label="Модель">grok-4.7</td><td class="core-mono core-dim" data-label="Ключ">pk_…77c2</td><td data-label="Статус"><span class="core-state core-state--off">отменён</span></td><td class="core-num" data-label="Токены">88</td><td class="core-num" data-label="Время, мс">1 204</td></tr>
+            <tr class="core-click" tabindex="0"><td class="core-mono" data-label="Время">12:01:02</td><td class="core-mono" data-label="Модель">claude-sonnet-4.5</td><td class="core-mono core-dim" data-label="Ключ">pk_…a81f</td><td data-label="Статус"><span class="core-state core-state--ok">200</span></td><td class="core-num" data-label="Токены">4 410</td><td class="core-num" data-label="Время, мс">2 380</td></tr>
+            <tr class="core-click" tabindex="0"><td class="core-mono" data-label="Время">11:59:47</td><td class="core-mono" data-label="Модель">gpt-5-mini</td><td class="core-mono core-dim" data-label="Ключ">pk_…a81f</td><td data-label="Статус"><span class="core-state core-state--ok">200</span></td><td class="core-num" data-label="Токены">212</td><td class="core-num" data-label="Время, мс">340</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="core-glass core-glass--far core-glass--work core-pane" aria-label="Пример формы настроек">
+      <div class="core-pane__head"><h3 class="core-pane__title">Поиск в интернете</h3><span class="core-pane__meta">core-form · core-state</span></div>
+      <div class="core-pane__body"><form class="core-form" onsubmit="return false">
+        <fieldset class="core-form__group"><legend class="core-form__legend">Поставщик</legend>
+          <div class="core-form__row"><label class="core-form__label" for="sc-t1">Включить поиск<small class="core-form__hint">Модель сама решает, когда искать.</small></label><div class="core-form__ctl core-form__ctl--end"><label class="core-switch"><input type="checkbox" role="switch" id="sc-t1" checked><span class="core-sr">Включить поиск</span></label></div></div>
+          <div class="core-form__row" data-state="dirty"><label class="core-form__label" for="sc-t2">Запросов в сутки<small class="core-form__hint">Строка изменена и ещё не сохранена.</small></label><div class="core-form__ctl"><input class="core-input" id="sc-t2" value="500" inputmode="numeric"></div></div>
+          <div class="core-form__row" data-state="error"><label class="core-form__label" for="sc-t3">Таймаут, секунд</label><div class="core-form__ctl"><input class="core-input" id="sc-t3" value="-5" aria-invalid="true" aria-describedby="sc-t3e"></div><p class="core-form__error" id="sc-t3e">Введите число от 1 до 120</p></div>
+          <div class="core-form__row" data-state="saved"><label class="core-form__label" for="sc-t4">Регион</label><div class="core-form__ctl"><select class="core-input" id="sc-t4"><option>Россия</option><option>Весь мир</option></select></div></div>
+          <div class="core-form__row"><span class="core-form__label">Ключ API</span><div class="core-form__ctl"><div class="core-secret" data-state="hidden" style="flex:1 1 180px"><code class="core-secret__value">••••••••••••••••a81f</code><button type="button" class="core-btn core-btn--sm core-btn--quiet" aria-pressed="false">Показать</button><button type="button" class="core-btn core-btn--sm">Копировать</button></div></div></div>
+        </fieldset>
+        <div class="core-form__foot"><span class="core-state" data-state="dirty" role="status">есть несохранённые изменения</span><button type="button" class="core-btn core-btn--quiet">Отменить</button><button type="button" class="core-btn core-btn--main">Сохранить</button></div>
+      </form></div>
+    </section>
+    <section class="core-glass core-glass--far core-glass--work core-pane" aria-label="Адреса, секреты, состояния, пустой список">
+      <div class="core-pane__head"><h3 class="core-pane__title">Адреса, секреты, состояния</h3><span class="core-pane__meta">core-copy · core-secret · core-state · core-empty</span></div>
+      <div class="core-pane__body sc-tools__col">
+        <div class="core-copy"><span class="core-copy__label">Адрес</span><code class="core-copy__value">premier.example/v1/chat/completions?stream=true&amp;model=claude-opus-4.5</code><button type="button" class="core-btn core-btn--sm" data-done>Скопировано</button></div>
+        <div class="core-secret core-secret--once" data-state="shown"><code class="core-secret__value">pk_live_ПРИМЕР_ключ_показывается_один_раз_и_не_переносится_на_новую_строку</code><button type="button" class="core-btn core-btn--sm">Копировать</button></div>
+        <p class="sc-tools__states"><span class="core-state core-state--ok">работает</span><span class="core-state core-state--warn">с перебоями</span><span class="core-state core-state--bad">недоступна</span><span class="core-state core-state--off">нет данных</span><span class="core-state" data-state="saving">сохраняется</span></p>
+        <div class="core-empty core-empty--sm"><span class="core-mini core-mini--xl" data-core-cond="dark"></span><h4 class="core-empty__title">Ключей пока нет</h4><p class="core-empty__text">Пустое состояние: остывшее мини-ядро, заголовок, строка и одно действие.</p><button type="button" class="core-btn">Создать ключ</button></div>
+      </div>
+    </section>
   </div>
 </section>
 
