@@ -1,64 +1,73 @@
 /* Premier · статус моделей на системе Core (редизайн, шаг 7).
-   Классы и id разметки сохранены: их читает скрипт страницы. Только токены Core; шрифт — свой, из /fonts. */
+   Одна стеклянная панель: сводка, модели, пояснение. Каждая модель — мини-ядро своей формы, состояние словом
+   и меткой, полоска за 24 часа, читаемая по высоте сегментов. Только токены Core; материал — классы стекла. */
 
 html.core { scroll-behavior: auto; }
 body { margin: 0; min-height: 100vh; min-height: 100dvh; font: var(--core-human-3); color: var(--core-text); -webkit-font-smoothing: antialiased; }
-h1 { margin: 0; font-family: var(--core-font-human); font-weight: var(--core-w-3); font-size: var(--core-fs-5); line-height: 1.2; letter-spacing: 0; }
 a { color: var(--core-text-2); text-decoration: none; }
 a:hover { color: var(--core-text); }
-a:focus-visible, .tl i[tabindex]:focus-visible { outline: 2px solid var(--core-focus); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .sp { flex: 1; }
 .wrap { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 0 var(--core-s-6); }
 .core-scene { z-index: 0; }
 
-/* шапка: стекло ближнего слоя, прилипает к верху */
-header { position: sticky; top: 0; z-index: 20; background: var(--core-glass-near); -webkit-backdrop-filter: var(--core-backdrop-near); backdrop-filter: var(--core-backdrop-near); border-bottom: 1px solid var(--core-line); }
+/* шапка: дальнее рабочее стекло во всю ширину, прилипает к верху */
+header.core-glass { position: sticky; top: 0; z-index: 20; border-radius: 0; }
 header .wrap { display: flex; align-items: center; gap: var(--core-s-6); min-height: var(--core-h-lg); }
 header .wrap > a:not(.brand) { display: inline-flex; align-items: center; min-height: var(--core-hit); font: var(--core-human-2); }
 .brand { display: inline-flex; align-items: center; gap: var(--core-s-2); font: var(--core-human-4); color: var(--core-text) !important; }
-.brand .mark { width: 24px; height: 24px; border-radius: var(--core-r-sm); overflow: hidden; display: inline-block; background: transparent; }
-.brand .mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.brand .mark { display: inline-block; width: 24px; height: 24px; overflow: hidden; border-radius: var(--core-r-sm); }
+.brand .mark img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-main { padding: var(--core-s-10) 0 var(--core-s-20, 80px); }
-.sub { margin-top: var(--core-s-2); margin-bottom: var(--core-s-6); font: var(--core-human-2); color: var(--core-text-2); }
-.sum { margin-bottom: var(--core-s-5); }
+main { padding: var(--core-s-8) 0 var(--core-s-16); }
+.board-head { padding: var(--core-s-6) var(--core-s-6) var(--core-s-5); border-bottom: 1px solid var(--core-line); }
+h1 { margin: 0; font: var(--core-human-5); font-weight: var(--core-w-3); letter-spacing: var(--core-track-5); }
+.sub { margin-top: var(--core-s-1); font: var(--core-machine-1); font-variant-ligatures: none; color: var(--core-text-2); }
+.sum { margin-top: var(--core-s-4); min-height: var(--core-lh-3); }
+.sum:empty { display: none; }
 
-/* сводка: одна плита; цвет только для статуса */
-.chip { display: inline-flex; align-items: center; gap: var(--core-s-2); min-height: var(--core-h-md); padding: var(--core-s-2) var(--core-s-4); border: 1px solid var(--core-line); border-radius: var(--core-r-md); background: var(--core-glass-mid); -webkit-backdrop-filter: var(--core-backdrop-mid); backdrop-filter: var(--core-backdrop-mid); box-shadow: inset 0 1px 0 var(--core-edge-mid); font: var(--core-human-2); color: var(--core-text-2); }
-.chip b { font: var(--core-machine-2); color: var(--core-text); font-weight: var(--core-w-3); }
-.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
-.dot.ok { background: var(--core-ok); }
-.dot.bad { background: var(--core-bad); }
-.dot.na { background: var(--core-text-3); }
+/* сводка: одна строка, читается с первого взгляда; число — машинным голосом */
+.chip { display: flex; align-items: center; flex-wrap: wrap; gap: var(--core-s-2); font: var(--core-human-3); color: var(--core-text); }
+.chip b { font: var(--core-machine-3); font-weight: var(--core-w-3); font-variant-numeric: tabular-nums; }
+.chip .core-state::before { width: 8px; height: 8px; }
 
-/* модель: плита средней глубины */
-.m { border: 1px solid var(--core-line); border-radius: var(--core-r-md); background: var(--core-glass-mid); -webkit-backdrop-filter: var(--core-backdrop-mid); backdrop-filter: var(--core-backdrop-mid); box-shadow: inset 0 1px 0 var(--core-edge-mid); padding: var(--core-s-4) var(--core-s-5); margin-bottom: var(--core-s-3); color: var(--core-text); }
-.m-top { display: flex; align-items: center; gap: var(--core-s-2); flex-wrap: wrap; }
-.m-top b { font: var(--core-human-3); font-weight: var(--core-w-3); color: var(--core-text); }
-.m-top .st { font: var(--core-human-1); color: var(--core-text-2); }
+/* модель: строка панели, а не отдельная плита; разделены волосяной линией */
+.m { padding: var(--core-s-4) var(--core-s-6); border-top: 1px solid var(--core-line); }
+.m:first-child { border-top: 0; }
+.m-msg { font: var(--core-human-2); color: var(--core-text-2); }
+.m-top { display: flex; align-items: center; flex-wrap: wrap; gap: var(--core-s-1) var(--core-s-3); }
+.m-top b { font: var(--core-machine-3); font-weight: var(--core-w-2); font-variant-ligatures: none; color: var(--core-text); overflow-wrap: anywhere; }
+.m-top .core-state { font: var(--core-machine-2); }
+.m-top .st { font: var(--core-machine-1); font-variant-ligatures: none; color: var(--core-text-2); overflow-wrap: anywhere; }
 .m-top .st.bad { color: var(--core-bad); }
 .m-top .sp2 { flex: 1; }
-.m-top .up { font: var(--core-machine-2); color: var(--core-text-2); white-space: nowrap; }
-.m-top .up b { font: var(--core-machine-2); color: var(--core-text); font-weight: var(--core-w-3); }
+.m-top .up { font: var(--core-machine-2); font-variant-numeric: tabular-nums; color: var(--core-text-2); white-space: nowrap; }
+.m-top .up b { font: inherit; font-weight: var(--core-w-3); color: var(--core-text); }
+/* погасшая модель и модель без данных не кричат: имя на шаг тише, состояние остаётся в полный голос */
+.m[data-cond=down] .m-top > b, .m[data-cond=na] .m-top > b { color: var(--core-text-2); }
 
-/* полоска за 24 часа: зелёный — отвечала, красный — ошибки, серый — данных нет */
-.tl { display: flex; gap: 2px; margin-top: var(--core-s-3); }
-.tl i { flex: 1; height: 10px; border-radius: 2px; background: var(--core-fill-2); }
-.tl i.up { background: var(--core-ok); opacity: .75; }
-.tl i.down { background: var(--core-bad); opacity: .85; cursor: var(--core-cursor-action); }
-.tl-l { display: flex; justify-content: space-between; margin-top: var(--core-s-1); font: var(--core-machine-3); color: var(--core-text-3); }
+/* полоска за 24 часа: отвечала — высокий зелёный сегмент, ошибки — низкий красный, данных нет — серая черта.
+   Высота повторяет цвет, поэтому перебой виден как провал и без различения цветов. */
+.tl { display: flex; align-items: flex-end; gap: 2px; height: 16px; margin-top: var(--core-s-3); }
+.tl i { flex: 1; height: 3px; border-radius: 1px; background: var(--core-fill-3); }
+.tl i.up { height: 100%; border-radius: 2px; background: var(--core-ok); opacity: .75; }
+.tl i.down { position: relative; height: 45%; border-radius: 2px; background: var(--core-bad); cursor: var(--core-cursor-action); }
+.tl i[tabindex]:focus-visible { outline: 2px solid var(--core-focus); outline-offset: 2px; }
+.tl-l { display: flex; justify-content: space-between; margin-top: var(--core-s-1); font: var(--core-machine-1); color: var(--core-text-3); }
 
-.note { margin-top: var(--core-s-7, 28px); font: var(--core-human-1); color: var(--core-text-2); max-width: 70ch; }
+.note { padding: var(--core-s-4) var(--core-s-6); font: var(--core-human-1); color: var(--core-text-2); }
 
 /* для касания: невидимая область нажатия вокруг сегмента с ошибкой (не меньше 44 px по высоте) */
 @media (pointer: coarse) {
-  .tl i { position: relative; }
-  .tl i.down::after { content: ""; position: absolute; left: -2px; right: -2px; top: -17px; bottom: -17px; }
+  .tl i.down::after { content: ""; position: absolute; left: -2px; right: -2px; top: -26px; bottom: -11px; }
 }
 @media (max-width: 560px) {
-  .m-top .up { display: none; }
-  .m-top .st { width: 100%; }
+  .wrap { padding: 0 var(--core-s-3); }
+  main { padding-top: var(--core-s-4); }
+  .board-head, .m, .note { padding-left: var(--core-s-4); padding-right: var(--core-s-4); }
+  .m-top .sp2 { display: none; }
+  .m-top > b { flex: 1 1 60%; }
+  .m-top .up { flex: 1 1 100%; }
   header .wrap { gap: var(--core-s-3); }
 }
 @media (max-width: 380px) {
